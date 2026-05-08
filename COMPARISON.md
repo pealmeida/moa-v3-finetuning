@@ -8,7 +8,8 @@
 | **v2** | 15 manual prompts | 67% (10/15) | Manual tuning + bonuses | 2026-05-06 | Local |
 | **v2.1** | 30 manual prompts | 40% (12/30) | Architecture/tech_design bonuses | 2026-05-06 | Local |
 | **v3.0** | 10K Alpaca prompts | **87.2%** (1744/2000) | MSE optimization (scipy L-BFGS-B) | 2026-05-07 | RunPod Serverless |
-| **v3.1** | 50K GPD synthetic | **99.6%** | MSE optimization + LLMFit | 2026-05-08 | Local + RunPod |
+| **v3.1-GPD** | 15K GPD (trivial+light) | **72.7%** | MSE opt + balanced weights | 2026-05-08 | RunPod Serverless |
+| **v3.1-Massive** | 75K (GPD+Alpaca+OpenOrca) | **42.8%** | Full 6-tier test | 2026-05-08 | RunPod Serverless |
 
 ---
 
@@ -141,6 +142,24 @@
 - 35-rule anonymization engine
 - Self-evaluation feedback loop
 - **Breakthrough:** Users can create their own optimized datasets
+
+### v3.1 Massive Per-Tier Test (2026-05-08)
+- 75K samples (GPD 35K + Alpaca 20K + OpenOrca 20K)
+- Full 6-tier per-tier accuracy evaluation
+- RunPod Serverless: 8.4s execution
+
+**Per-Tier Results:**
+
+| Tier | Samples | Baseline | Optimized | Δ |
+|------|---------|----------|-----------|---|
+| Trivial | 7,069 | 18.7% | **57.9%** | +39.2pp |
+| Light | 5,228 | 49.2% | 30.3% | -18.9pp |
+| Moderate | 1,800 | 33.8% | 17.6% | -16.2pp |
+| Heavy | 770 | 73.9% | 49.9% | -24.0pp |
+| Intensive | 134 | 60.4% | 33.6% | -26.9pp |
+| **Overall** | **15,001** | **34.4%** | **42.8%** | **+8.5pp** |
+
+**Findings:** Trivial detection improved massively (+39pp). Light/moderate/heavy separation degraded due to feature overlap. See `docs/PER_TIER_TEST_REPORT.md` for full analysis.
 
 ---
 

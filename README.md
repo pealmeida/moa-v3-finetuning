@@ -402,6 +402,29 @@ python handler_v32_cascade.py
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full version history and [COMPARISON.md](./COMPARISON.md) for detailed v1→v2→v3→v3.2 analysis.
 
+### v3.3 — 6-Model Cost-Efficient Routing (Planned)
+
+The next step is **specialized model assignment per tier** — using the cheapest model that can reliably handle each tier's requirements:
+
+| Tier | Model | Cost | Why |
+|------|-------|------|-----|
+| **Trivial** | glm-4.5-air | FREE | Basic language understanding |
+| **Light** | glm-4.7-flash | $0.02/M | Instruction following |
+| **Moderate** | qwen3.5-9b | $0.10/M | Code + reasoning |
+| **Heavy** | qwen3.6-plus (bailian) | $0.04/M | Deep analysis |
+| **Intensive** | claude-sonnet-4.6 | $3.00/M | Architecture, reasoning |
+| **Extreme** | claude-opus-4.6 | $5.00/M | Strategic thinking |
+
+**Expected savings:** 80-84% vs always-Opus. See `docs/V3_3_MODEL_ROUTING_STRATEGY.md` for details.
+
+### Chief Scientist Evaluation
+
+A complete evaluation of the training pipeline is available at `docs/CHIEF_SCIENTIST_EVALUATION.md`. Key findings:
+- **Engineering quality:** 8.5/10 — clean, reproducible pipelines
+- **Label validity:** 2.0/10 — synthetic labels, no ground truth
+- **Production readiness:** 6.0/10 — ready for trivial/light only (55% of traffic)
+- **Recommended action:** Deploy partially now, validate labels before full rollout
+
 ---
 
 ## Related Projects

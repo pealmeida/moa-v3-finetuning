@@ -4,6 +4,34 @@ All notable changes to the MoA v3 Finetuning project.
 
 ## [Unreleased]
 
+### v3.2 — Tier-Pair Binary Cascade (2026-05-08)
+
+### Added
+- **v3.2 cascade handler** (`handler_v32_cascade.py`) — 5 independent binary classifiers in cascade for full 6-tier classification
+- **sklearn integration** — LogisticRegression with LBFGS solver for non-linear decision boundaries
+- **Balanced training** — 1:1 positive/negative sampling per classifier
+- **RunPod test results** — 75K samples across 3 datasets, 15K test set, 74.7% overall accuracy
+- **Documentation**
+  - `docs/V3_2_CASCADE_REPORT.md` — Full cascade analysis (7.8KB)
+  - `docs/PER_TIER_TEST_REPORT.md` — v3.1 massive per-tier test analysis
+
+### Results (v3.2)
+| Dataset | Method | Baseline | Optimized | Improvement |
+|---------|--------|----------|-----------|-------------|
+| 75K (3 datasets) | Cascade | 24.3% | **74.7%** | +50.4pp |
+
+**Per-tier:** trivial 100.0%, light 93.1%, moderate 42.4%, heavy 38.7%, intensive 19.3%, extreme 68.8%
+
+### Changed
+- `handler.py` → now uses v3.2 cascade handler
+- `Dockerfile.serverless` → updated with sklearn, cascade handler
+- `entrypoint.sh` → updated for cascade handler
+- `README.md` → updated with v3.2 results and cascade architecture
+
+---
+
+## [3.1.0] — 2026-05-08
+
 ### Added
 - **v3.1 handler** (`handler_v31.py`) — Multi-dataset training with GPD (50K synthetic), workspace data, and user-uploaded datasets
 - **LLMFit Dataset Factory** (`llmfit/`) — Complete pipeline for personalized dataset creation
@@ -11,22 +39,19 @@ All notable changes to the MoA v3 Finetuning project.
   - `anonymizer.py` — 35-rule anonymization engine (PII, secrets, context, generalization)
   - `self_eval.py` — Self-evaluation module with SQLite feedback buffer for online learning
   - `gpd_generator.py` — 50K synthetic trivial/light prompt generator
+  - `handler_v31_massive.py` — Massive multi-dataset per-tier test handler
 - **General-Purpose Dataset (GPD)** — 50,000 synthetic prompts (35K trivial + 15K light) for light-tier optimization
 - **Documentation**
   - `docs/ARCHITECTURE_V3_1.md` — Full v3.1 architecture specification (38KB)
   - `docs/TRAINING_REPORT_V3_1.md` — Training results and anonymization report
-- **GitHub templates** — `.gitignore`, `.dockerignore`
-
-### Changed
-- `entrypoint.sh` → defaults to `handler_v31.py` (v3.1 handler)
-- `Dockerfile.serverless` → includes llmfit tools and both v3.0/v3.1 handlers
-- `README.md` → comprehensive open-source documentation
+- **GitHub templates** — `.gitignore`, `.dockerignore`, `CONTRIBUTING.md`
 
 ### Results (v3.1)
 | Dataset | Baseline | Optimized | Improvement |
 |---------|----------|-----------|-------------|
 | GPD 50K | 19.3% | 99.6% | +80.2% |
 | Alpaca 10K | 2.3% | 87.2% | +84.9% |
+| 75K (3 datasets) | 34.4% | 42.8% | +8.5pp |
 
 ---
 

@@ -1,41 +1,46 @@
 # MoA v3 Finetuning — Self-Optimizing Gateway Router
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 [![RunPod](https://img.shields.io/badge/RunPod-Serverless-orange.svg)](https://runpod.io/)
+[![scikit-learn](https://img.shields.io/badge/ml-scikit--learn-yellow.svg)](https://scikit-learn.org/)
 
 **A data-driven weight optimization system for Mixture-of-Agents (MoA) Gateway Router complexity classification.**
 
-Automatically tunes the heuristic router that classifies prompt complexity into 6 tiers (trivial → extreme), enabling cost-efficient model routing. Trained on 50K+ prompts, deployed on RunPod Serverless, with 87-99% tier-matching accuracy.
+Automatically tunes the heuristic router that classifies prompt complexity into 6 tiers (trivial → extreme), enabling cost-efficient model routing. Trained on **75K prompts** across 3 datasets, deployed on RunPod Serverless, with **74.7% tier-matching accuracy** across all 6 tiers using a tier-pair binary cascade.
 
 ---
 
 ## Quick Results
 
-| Version | Dataset | Baseline | Optimized | Improvement | Platform |
-|---------|---------|----------|-----------|-------------|----------|
-| v1 | 15 manual prompts | — | 53% | — | Local |
-| v2 | 15 manual prompts | 53% | 67% | +14pp | Local |
-| v2.1 | 30 manual prompts | 67% | 40% | -27pp (overfit) | Local |
-| **v3.0** | **10K Alpaca** | **2.3%** | **87.2%** | **+84.9%** | **RunPod Serverless** |
-| **v3.1** | **50K GPD** | **19.3%** | **99.6%** | **+80.2%** | **Local / RunPod** |
+| Version | Method | Dataset | Baseline | Optimized | Improvement | Platform |
+|---------|--------|---------|----------|-----------|-------------|----------|
+| v1 | Static weights | 15 prompts | — | 53% | — | Local |
+| v2 | Manual tuning | 15 prompts | 53% | 67% | +14pp | Local |
+| v2.1 | Manual tuning | 30 prompts | 67% | 40% | -27pp (overfit) | Local |
+| **v3.0** | MSE optimization | 10K Alpaca | 2.3% | **87.2%** | **+84.9%** | RunPod |
+| **v3.1** | MSE + balanced | 50K GPD | 19.3% | **99.6%** | **+80.2%** | Local/RunPod |
+| **v3.2** | **Binary cascade** | **75K (3 datasets)** | **24.3%** | **74.7%** | **+50.4pp** | **RunPod** |
 
-### Per-Tier Accuracy (v3.1)
+### Per-Tier Accuracy (v3.2 — All 6 Tiers)
 
-| Tier | Accuracy | Use Case |
-|------|----------|----------|
-| **Trivial** | 100.0% | Greetings, status checks, simple facts |
-| **Light** | 98.5% | Summaries, formatting, basic code fixes |
-| Moderate | — | *Needs multi-dataset training* |
-| Heavy | — | *Needs multi-dataset training* |
-| Intensive | — | *Needs multi-dataset training* |
-| Extreme | — | *Needs multi-dataset training* |
+| Tier | Test Samples | Baseline (v3.0) | Cascade (v3.2) | Δ |
+|------|-------------|-----------------|----------------|---|
+| **Trivial** | 5,000 | 23.0% | **100.0%** | +77.0pp |
+| **Light** | 3,373 | 56.5% | **93.1%** | +36.6pp |
+| **Moderate** | 2,007 | 17.0% | **42.4%** | +25.4pp |
+| **Heavy** | 1,823 | 13.0% | **38.7%** | +25.7pp |
+| **Intensive** | 855 | 0.6% | **19.3%** | +18.7pp |
+| **Extreme** | 1,944 | 0.05% | **68.8%** | +68.7pp |
+| **Overall** | **15,002** | **24.3%** | **74.7%** | **+50.4pp** |
 
-> **Note:** GPD dataset targets trivial/light prompts. For full-tier coverage, combine with Alpaca (moderate+) or use the merged pipeline.
+> **Every single tier improved.** The cascade achieves 93%+ accuracy on trivial and light — the highest-volume tiers that drive most cost savings.
 
 ---
 
 ## Architecture
+
+### v3.0/v3.1 — Global Optimization
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
@@ -47,40 +52,90 @@ Automatically tunes the heuristic router that classifies prompt complexity into 
   • Self-Instruct       sentence_count,       bounds: [0, 0.35]     → MoA Router
   • GPD (50K synth)     has_code,             converges:            → /v3/weights
   • User context        architecture,           31-48 iterations
-                        technical_design,
                         ambiguity_score, ...
 ```
 
-### 15-Feature Vector (v3.1)
+### v3.2 — Tier-Pair Binary Cascade
 
-| Feature | Type | Description | Weight Range |
-|---------|------|-------------|--------------|
-| `sentence_count` | int | Number of sentences | 0.00–0.35 |
-| `avg_word_length` | float | Average chars per word | 0.00–0.35 |
-| `has_question` | bool | Contains `?` | 0.00–0.35 |
-| `question_technical` | bool | Technical question | 0.00–0.35 |
-| `technical_design` | bool | System design terms | 0.00–0.35 |
-| `has_code` | bool | Code blocks/backticks | 0.00–0.35 |
-| `architecture` | bool | Architecture keywords | 0.00–0.35 |
-| `word_count` | int | Total words | 0.00–0.35 |
-| `four_plus` | bool | ≥4 signals active | 0.00–0.35 |
-| `has_imperative` | bool | Starts with command verb | 0.00–0.35 |
-| `technical_terms` | int | Tech keyword count | 0.00–0.35 |
-| `multi_step` | bool | Multiple steps implied | 0.00–0.35 |
-| `requires_context` | bool | Needs external context | 0.00–0.35 |
-| `domain_specificity` | float | Domain jargon density | 0.00–0.35 |
-| `ambiguity_score` | float | Vague language density | 0.00–0.35 |
+```
+Input Prompt
+    │
+    ▼
+┌─────────────────────┐  Yes → TRIVIAL (99.6% acc)
+│ Classifier 1:       │
+│ Trivial?            │  No
+│ (99.2% train acc)   │
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────┐  Yes → LIGHT (93.1% acc)
+│ Classifier 2:       │
+│ Light?              │  No
+│ (85.8% train acc)   │
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────┐  Yes → MODERATE (42.4% acc)
+│ Classifier 3:       │
+│ Moderate?           │  No
+│ (83.9% train acc)   │
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────┐  Yes → HEAVY (38.7% acc)
+│ Classifier 4:       │
+│ Heavy?              │  No
+│ (80.5% train acc)   │
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────┐  Yes → INTENSIVE (19.3% acc)
+│ Classifier 5:       │
+│ Intensive?          │  No
+│ (76.3% train acc)   │
+└────────┬────────────┘
+         │
+         ▼
+    EXTREME (68.8% acc)
+```
+
+### Why the Cascade Works Better
+
+1. **Balanced training** — Each classifier trains on a 1:1 ratio of positive/negative samples, avoiding class imbalance
+2. **Independent feature optimization** — Each classifier finds the features that best separate its tier
+3. **Logistic Regression** — sklearn's LogisticRegression handles non-linear boundaries better than linear regression
+4. **Cascade ordering** — Easiest tiers first (trivial), hardest last (intensive), with extreme as default
+
+### 15-Feature Vector
+
+| Feature | Type | Description |
+|---------|------|-------------|
+| `sentence_count` | int | Number of sentences |
+| `avg_word_length` | float | Average chars per word |
+| `has_question` | bool | Contains `?` |
+| `question_technical` | bool | Technical question |
+| `technical_design` | bool | System design terms |
+| `has_code` | bool | Code blocks/backticks |
+| `architecture` | bool | Architecture keywords |
+| `word_count` | int | Total words |
+| `four_plus` | bool | ≥4 signals active |
+| `has_imperative` | bool | Starts with command verb |
+| `technical_terms` | int | Tech keyword count |
+| `multi_step` | bool | Multiple steps implied |
+| `requires_context` | bool | Needs external context |
+| `domain_specificity` | float | Domain jargon density |
+| `ambiguity_score` | float | Vague language density |
 
 ### Tier Boundaries
 
-| Tier | Score Range | Model Example |
-|------|-------------|---------------|
-| trivial | 0.00–0.08 | glm-4.5-air (free) |
-| light | 0.08–0.18 | glm-4.7-flash ($0.06/M) |
-| moderate | 0.18–0.32 | glm-4.7 |
-| heavy | 0.32–0.52 | glm-5.1 |
-| intensive | 0.52–0.72 | qwen3.6-plus |
-| extreme | 0.72–1.00 | qwen3.6-plus / claude-opus |
+| Tier | Score Range | Model Example | Cost |
+|------|-------------|---------------|------|
+| trivial | 0.00–0.08 | glm-4.5-air | FREE |
+| light | 0.08–0.18 | glm-4.7-flash | $0.06/M |
+| moderate | 0.18–0.32 | glm-4.7 | $0.10/M |
+| heavy | 0.32–0.52 | glm-5.1 | $0.13/M |
+| intensive | 0.52–0.72 | qwen3.6-plus | $0.26/M |
+| extreme | 0.72–1.00 | qwen3.6-plus / claude-opus | $5.00/M |
 
 ---
 
@@ -88,36 +143,45 @@ Automatically tunes the heuristic router that classifies prompt complexity into 
 
 ```
 moa-v3-finetuning/
-├── README.md                  # This file
-├── CHANGELOG.md               # Version history
-├── LICENSE                    # MIT License
-├── CONTRIBUTING.md            # Contribution guidelines
+├── README.md                     # This file
+├── CHANGELOG.md                  # Version history (v1 → v3.2)
+├── COMPARISON.md                 # Detailed v1→v2→v3→v3.2 evolution
+├── CONTRIBUTING.md               # Contribution guidelines
+├── LICENSE                       # MIT License
 ├── .gitignore
 ├── .dockerignore
 │
-├── handler.py                 # v3.0 handler (Alpaca baseline, RunPod compatible)
-├── handler_v31.py             # v3.1 handler (GPD + multi-dataset, LLMFit-ready)
-├── Dockerfile                 # Standard build
-├── Dockerfile.serverless      # RunPod Serverless container
-├── Dockerfile.train           # Training container (SSH debug)
-├── entrypoint.sh              # Serverless entrypoint
-├── requirements.txt           # Python dependencies
+├── handler.py                    # Active handler (v3.2 cascade)
+├── handler_v31.py                # v3.1 handler (GPD + multi-dataset)
+├── handler_v31_massive.py        # v3.1 massive per-tier test
+├── handler_v32_cascade.py        # v3.2 tier-pair binary cascade
+├── Dockerfile                    # Standard build
+├── Dockerfile.serverless         # RunPod Serverless container
+├── Dockerfile.train              # Training container (SSH debug)
+├── entrypoint.sh                 # Serverless entrypoint
+├── requirements.txt              # Python dependencies
 │
-├── llmfit/                    # LLMFit — Dataset Factory (v3.1)
-│   ├── llmfit.py              # Core engine: extract → label → validate → optimize
-│   ├── self_eval.py           # Self-evaluation + feedback buffer (SQLite)
-│   ├── anonymizer.py          # 35-rule PII/secret/context anonymization
-│   ├── handler_v31.py         # v3.1 training handler (copy for RunPod)
+├── llmfit/                       # LLMFit — Dataset Factory
+│   ├── llmfit.py                 # Core engine: extract → label → validate → optimize
+│   ├── self_eval.py              # Self-evaluation + feedback buffer (SQLite)
+│   ├── anonymizer.py             # 35-rule PII/secret/context anonymization
+│   ├── handler_v31.py            # v3.1 training handler (copy)
+│   ├── handler_v31_massive.py    # v3.1 massive test handler (copy)
 │   └── datasets/
-│       ├── gpd_generator.py   # Generate 50K synthetic trivial/light prompts
+│       ├── gpd_generator.py      # Generate 50K synthetic trivial/light prompts
 │       ├── general-purpose/
-│       │   └── stats.json     # GPD dataset statistics
-│       ├── workspace_weights.json  # Workspace-optimized weights
-│       └── v31_runpod_alpaca_result.json  # RunPod training results
+│       │   └── stats.json        # GPD dataset statistics
+│       ├── v31_runpod_alpaca_result.json
+│       ├── v31_gpd_runpod_result.json
+│       ├── v31_massive_runpod_result.json
+│       ├── v32_cascade_runpod_result.json
+│       └── workspace_weights.json
 │
 └── docs/
-    ├── ARCHITECTURE_V3_1.md   # Full v3.1 architecture spec (38KB)
-    └── TRAINING_REPORT_V3_1.md # Training results & anonymization report
+    ├── ARCHITECTURE_V3_1.md       # Full v3.1 architecture spec (38KB)
+    ├── TRAINING_REPORT_V3_1.md    # v3.1 training results & anonymization
+    ├── PER_TIER_TEST_REPORT.md    # v3.1 massive per-tier test analysis
+    └── V3_2_CASCADE_REPORT.md     # v3.2 cascade final report
 ```
 
 ---
@@ -128,13 +192,19 @@ moa-v3-finetuning/
 
 ```bash
 # Install dependencies
-pip install scipy numpy datasets runpod requests
+pip install scipy numpy scikit-learn datasets runpod requests
 
 # v3.0 — Alpaca baseline (10K prompts)
-python handler.py
-
-# v3.1 — GPD dataset (50K synthetic prompts)
 python handler_v31.py
+
+# v3.1 — GPD dataset (50K synthetic)
+python handler_v31.py
+
+# v3.1 massive — 3 datasets (75K)
+python handler_v31_massive.py
+
+# v3.2 cascade — binary classifiers (recommended)
+python handler_v32_cascade.py
 ```
 
 ### RunPod Serverless Deployment
@@ -145,11 +215,11 @@ docker build -t ghcr.io/pealmeida/moa-v3-finetuning:latest \
   -f Dockerfile.serverless .
 docker push ghcr.io/pealmeida/moa-v3-finetuning:latest
 
-# Submit training job (via API)
+# Submit training job
 curl -X POST "https://api.runpod.ai/v2/<endpoint_id>/run" \
   -H "Authorization: Bearer $RUNPOD_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"input":{"datasets":["alpaca"],"max_per":10000}}'
+  -d '{"input":{"datasets":["gpd","alpaca","openorca"],"gpd_trivial":25000,"gpd_light":10000,"max_per":20000}}'
 ```
 
 ### LLMFit — Personalized Dataset Factory
@@ -162,8 +232,7 @@ python llmfit/llmfit.py generate \
 
 # Label with rule-based complexity estimation
 python llmfit/llmfit.py label \
-  --input datasets/raw.jsonl \
-  --mode rule
+  --input datasets/raw.jsonl --mode rule
 
 # Validate dataset quality
 python llmfit/llmfit.py validate \
@@ -187,48 +256,48 @@ python llmfit/datasets/gpd_generator.py \
 ### Python API
 
 ```python
-from handler_v31 import handler
+from handler_v32_cascade import handler
 
 result = handler({
     "input": {
-        "version": "v3.1",
-        "datasets": ["gpd", "alpaca"],  # or ["gpd"], ["alpaca"]
-        "max_per": 20000,               # max samples per dataset
-        "max_iter": 2000,               # scipy optimization iterations
+        "datasets": ["gpd", "alpaca", "openorca"],
+        "gpd_trivial": 25000,
+        "gpd_light": 10000,
+        "max_per": 20000,
     }
 })
 
-print(f"Accuracy: {result['optimized_accuracy']:.1%}")
-print(f"Weights: {result['optimized_weights']}")
+print(f"Cascade accuracy: {result['cascade']['accuracy']:.1%}")
+print(f"Macro accuracy: {result['cascade']['macro_accuracy']:.1%}")
+
+for tier, data in result['cascade']['tier_accuracy'].items():
+    print(f"  {tier}: {data['accuracy']:.1%} ({data['correct']}/{data['total']})")
 ```
 
 ---
 
-## Weight Evolution
+## v3.2 Cascade — Classifier Details
 
-### v3.1 Optimized Weights (GPD 50K)
+| Classifier | Train Accuracy | Samples | Top Feature | 2nd Feature | 3rd Feature |
+|------------|---------------|---------|-------------|-------------|-------------|
+| **Trivial** | 99.2% | 40,000 | ambiguity_score (-18.74) | domain_specificity (+8.24) | has_question (+5.29) |
+| **Light** | 85.8% | 26,976 | ambiguity_score (+7.39) | domain_specificity (-7.11) | has_question (-5.84) |
+| **Moderate** | 83.9% | 16,054 | domain_specificity (+1.61) | has_question (-1.33) | requires_context (-0.97) |
+| **Heavy** | 80.5% | 14,578 | ambiguity_score (+1.01) | architecture (-0.81) | multi_step (-0.81) |
+| **Intensive** | 76.3% | 6,834 | ambiguity_score (-1.24) | has_question (-1.01) | requires_context (-0.75) |
 
-| Feature | v3.0 (Alpaca) | v3.1 (GPD) | Change |
-|---------|---------------|------------|--------|
-| ambiguity_score | — | **0.6041** | NEW |
-| sentence_count | **0.2915** | 0.0000 | ↓↓↓ |
-| technical_design | 0.1196 | **0.2071** | ↑ |
-| avg_word_length | **0.1890** | 0.0000 | ↓↓↓ |
-| architecture | 0.0698 | **0.1208** | ↑ |
-| question | **0.1199** | 0.0000 | ↓↓↓ |
-| imperative | **0.1141** | **0.0295** | ↓ |
-| code | **0.1044** | **0.0267** | ↓ |
-| math | **0.1139** | — | REMOVED |
-| context | **0.1113** | — | REMOVED |
-| constraints | **0.0897** | — | REMOVED |
+### Key Insights
 
-**Why the difference?** GPD focuses on trivial/light prompts where `ambiguity_score` (vague language) is the primary differentiator. Alpaca is moderate+ where sentence structure and vocabulary dominate. **For best results, merge both datasets.**
+- **`ambiguity_score`** dominates all classifiers — vague/imprecise language is the strongest tier signal
+- **`domain_specificity`** separates technical prompts from general ones
+- **`has_question`** is positive for trivial (simple questions) but negative for action-oriented prompts
+- **`architecture`** is a strong negative for heavy — heavy prompts are technical but not system design
 
 ---
 
 ## Anonymization
 
-All user datasets are anonymized before training or sharing. 35 redaction rules across 4 categories:
+All user datasets are anonymized before training or sharing. **35 redaction rules** across 4 categories:
 
 | Category | Rules | Examples |
 |----------|-------|----------|
@@ -243,30 +312,31 @@ See `llmfit/anonymizer.py` for the full rule set.
 
 ## Performance
 
-| Metric | v3.0 (RunPod) | v3.1 (Local) |
-|--------|---------------|--------------|
-| Training time | 35s (RTX 4090) | 2s (CPU) |
-| Cold start | 428s | N/A |
-| Cost per run | ~$0.007 | $0.00 |
-| Convergence | 31 iterations | 48 iterations |
-| MSE reduction | 98.5% | 99.8% |
+| Metric | v3.0 | v3.1 | v3.2 |
+|--------|------|------|------|
+| **Dataset** | 10K Alpaca | 50K GPD | 75K (3 datasets) |
+| **Training time** | 35s (RTX 4090) | 2s (CPU) | 58s (RTX 4090) |
+| **Cost per run** | ~$0.007 | $0.00 | ~$0.01 |
+| **Convergence** | 31 iterations | 48 iterations | 5 classifiers |
+| **Overall accuracy** | 87.2% | 99.6%* | 74.7%** |
 
-### Why CPU is sufficient
+\* v3.1 targets trivial/light only (2 tiers)  
+\*\* v3.2 covers all 6 tiers
 
-The optimization is a **15-parameter L-BFGS-B MSE minimization** over 8K-50K training examples. This is pure numerical optimization — no GPU, no neural network, no embeddings. It runs in seconds on any modern CPU.
+### Why CPU is sufficient for v3.0/v3.1
 
-GPU is only needed if you extend to:
-- Neural network complexity classifiers
-- LoRA fine-tuning of LLMs
-- Embedding-based prompt representations
+The optimization is a **15-parameter L-BFGS-B MSE minimization** over 8K-50K training examples. Pure numerical optimization — no GPU needed.
+
+GPU is only needed for v3.2 (scikit-learn LogisticRegression on larger balanced datasets).
 
 ---
 
 ## Datasets
 
-| Dataset | Source | Samples | Tiers | License |
-|---------|--------|---------|-------|---------|
-| **Alpaca** | `tatsu-lab/alpaca` (HF) | 52K | moderate+ | Apache 2.0 |
+| Dataset | Source | Samples | Tier Coverage | License |
+|---------|--------|---------|---------------|---------|
+| **Alpaca** | `tatsu-lab/alpaca` (HF) | 52K | light → extreme | Apache 2.0 |
+| **OpenOrca** | `Open-Orca/OpenOrca` (HF) | 4M | light → extreme | Apache 2.0 |
 | **Self-Instruct** | `yizhongw/self_instruct` (HF) | 82K | moderate+ | Apache 2.0 |
 | **GPD (synthetic)** | Built-in generator | 50K | trivial/light | MIT |
 | **User workspace** | LLMFit scanner | Variable | all | Your data |
@@ -280,9 +350,9 @@ python llmfit/datasets/gpd_generator.py \
   --seed 42
 ```
 
-Generates 50,000 synthetic prompts from 70+ templates covering:
-- Trivial: greetings, definitions, conversions, simple facts
-- Light: code formatting, summaries, error explanations, file operations
+Generates 50,000 synthetic prompts from 70+ templates:
+- **Trivial:** greetings, definitions, conversions, simple facts
+- **Light:** code formatting, summaries, error explanations, file operations
 
 ---
 
@@ -296,26 +366,41 @@ Generates 50,000 synthetic prompts from 70+ templates covering:
 | **v3.0 routed** | $0.24 | $2.35 | $23.54 |
 | **Savings** | **96.3%** | **96.3%** | **96.3%** |
 
-Training cost per run: **$0.007** (35s on RTX 4090 via RunPod Serverless)
+Training cost per run: **~$0.01** (58s on RTX 4090 via RunPod Serverless)
 
 ---
 
 ## Reproduction
 
-To reproduce the v3.0 RunPod Serverless results:
+### v3.0 — Alpaca baseline
 
-1. Deploy the Docker image to a RunPod Serverless endpoint
-2. Submit a job with `{"input": {"datasets": ["alpaca"], "max_per": 10000}}`
-3. Results returned in ~460s (cold start + 35s execution)
+```bash
+# Deploy to RunPod, submit job:
+{"input": {"datasets": ["alpaca"], "max_per": 10000}}
+# Expected: 87.2% accuracy in ~460s (cold start + 35s execution)
+```
 
-To reproduce v3.1 locally:
+### v3.1 — GPD (local)
 
 ```bash
 pip install scipy numpy datasets
-python handler_v31.py  # or: python -c "from handler_v31 import handler; print(handler({'input': {'datasets': ['gpd'], 'max_per': 50000}}))"
+python handler_v31.py
+# Expected: 99.6% accuracy on GPD 50K (trivial 100%, light 98.5%)
 ```
 
-Expected output: 99.6% accuracy on GPD 50K.
+### v3.2 — Cascade (RunPod recommended)
+
+```bash
+pip install scipy numpy scikit-learn datasets runpod requests
+python handler_v32_cascade.py
+# Expected: 74.7% accuracy on 75K samples, all 6 tiers
+```
+
+---
+
+## Version History
+
+See [CHANGELOG.md](./CHANGELOG.md) for the full version history and [COMPARISON.md](./COMPARISON.md) for detailed v1→v2→v3→v3.2 analysis.
 
 ---
 

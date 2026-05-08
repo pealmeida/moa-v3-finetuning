@@ -8,11 +8,8 @@ RUN apt-get update && \
     python3 -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir scipy numpy datasets runpod requests
 
-# v3.1 handler (primary)
-COPY handler_v31.py /workspace/handler_v31.py
-
-# v3.0 handler (baseline compatibility)
-COPY handler.py /workspace/handler.py
+# v3.1 massive per-tier handler (primary)
+COPY handler_v31_massive.py /workspace/handler.py
 
 # LLMFit tools
 COPY llmfit/llmfit.py /workspace/llmfit/llmfit.py

@@ -1,5 +1,5 @@
-scipy
-numpy
-datasets
-runpod
-requests
+scipy>=1.11
+numpy>=1.24
+datasets>=2.14
+runpod>=1.7
+requests>=2.31

@@ -1,0 +1,26 @@
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+
+WORKDIR /workspace
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 python3-pip python3-venv && \
+    rm -rf /var/lib/apt/lists/* && \
+    python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir scipy numpy datasets runpod requests
+
+# v3.1 handler (primary)
+COPY handler_v31.py /workspace/handler_v31.py
+
+# v3.0 handler (baseline compatibility)
+COPY handler.py /workspace/handler.py
+
+# LLMFit tools
+COPY llmfit/llmfit.py /workspace/llmfit/llmfit.py
+COPY llmfit/anonymizer.py /workspace/llmfit/anonymizer.py
+COPY llmfit/datasets/gpd_generator.py /workspace/llmfit/datasets/gpd_generator.py
+
+COPY entrypoint.sh /workspace/entrypoint.sh
+RUN chmod +x /workspace/entrypoint.sh
+
+ENV PATH="/opt/venv/bin:$PATH"
+CMD ["/workspace/entrypoint.sh"]

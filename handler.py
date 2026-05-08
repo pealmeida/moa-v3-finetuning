@@ -74,4 +74,6 @@ def handler(event):
     return{"version":"v3.0","datasets":ds_names,"total":len(prompts),"train":len(tf),"test":len(ef),"optimized_weights":{k:round(v,4)for k,v in opt.items()},"baseline_accuracy":round(ba,4),"optimized_accuracy":round(ta,4),"improvement":round(ta-ba,4),"status":"completed"}
 
 if __name__=="__main__":
-    print(json.dumps(handler({"input":{"datasets":["alpaca"],"max_per":10000}}),indent=2))
+    # Standalone test run
+    result = handler({"input":{"datasets":["alpaca"],"max_per":10000}})
+    print(json.dumps(result, indent=2))

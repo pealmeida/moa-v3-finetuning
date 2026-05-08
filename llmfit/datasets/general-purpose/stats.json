@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-05-08T02:26:10.564750Z",
+  "seed": 42,
+  "total_samples": 50000,
+  "train_samples": 40000,
+  "test_samples": 10000,
+  "label_distribution": {
+    "trivial": 35000,
+    "light": 15000
+  },
+  "source_distribution": {
+    "gpd-synthetic": 50000
+  },
+  "domain_distribution": {
+    "general": 50000
+  },
+  "avg_word_count": 6.29,
+  "files": {
+    "full": "llmfit/datasets/general-purpose/baseline_synthetic.jsonl",
+    "train": "llmfit/datasets/general-purpose/train.jsonl",
+    "test": "llmfit/datasets/general-purpose/test.jsonl"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "version": "v3.0",
+  "source": "RunPod Serverless",
+  "job_id": "f62761cc-046a-49f3-84c0-ba3bbbb8078b-u2",
+  "endpoint": "hsbuehwnva85ca",
+  "gpu": "RTX 4090",
+  "dataset": "Alpaca (10K prompts)",
+  "total_samples": 10000,
+  "train_samples": 8000,
+  "test_samples": 2000,
+  "baseline_accuracy": 0.023,
+  "optimized_accuracy": 0.872,
+  "improvement": 0.849,
+  "delay_time_ms": 427538,
+  "execution_time_ms": 35098,
+  "optimized_weights": {
+    "sentence_count": 0.2915,
+    "question": 0.1199,
+    "technical_design": 0.1196,
+    "imperative": 0.1141,
+    "math": 0.1139,
+    "multi_step": 0.1077,
+    "context": 0.1113,
+    "constraints": 0.0897,
+    "code": 0.1044,
+    "avg_word_length": 0.189,
+    "architecture": 0.0698,
+    "word_count": 0.0,
+    "four_plus": 0.0
+  },
+  "anonymized": true,
+  "timestamp": "2026-05-08T03:04:00Z"
+}

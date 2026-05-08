@@ -9,7 +9,8 @@
 | **v2.1** | 30 manual prompts | 40% (12/30) | Architecture/tech_design bonuses | 2026-05-06 | Local |
 | **v3.0** | 10K Alpaca prompts | **87.2%** (1744/2000) | MSE optimization (scipy L-BFGS-B) | 2026-05-07 | RunPod Serverless |
 | **v3.1-GPD** | 15K GPD (trivial+light) | **72.7%** | MSE opt + balanced weights | 2026-05-08 | RunPod Serverless |
-| **v3.1-Massive** | 75K (GPD+Alpaca+OpenOrca) | **42.8%** | Full 6-tier test | 2026-05-08 | RunPod Serverless |
+| **v3.1-Massive** | 75K (GPD+Alpaca+OpenOrca) | **42.8%** | Global MSE optimization | 2026-05-08 | RunPod Serverless |
+| **v3.2-Cascade** | 75K (GPD+Alpaca+OpenOrca) | **74.7%** | Tier-pair binary cascade | 2026-05-08 | RunPod Serverless |
 
 ---
 

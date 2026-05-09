@@ -1,18 +1,14 @@
-"""MoA v3.3 — Label Correction Handler
+"""MoA v3.3 — Label Validation Handler
 
-Creates a clean, fully labeled dataset for v3.3 training by:
-1. Loading Alpaca (50K) + OpenOrca (50K) via streaming
-2. Extracting 15 features + formula labels (baseline)
-3. Training cascade on balanced data
-4. Using cascade predictions as PRIMARY labels (65.84% accuracy vs 30.11% baseline)
-5. Flagging low-confidence predictions for future LLM review
-6. Outputting train/test splits ready for v3.3 finetuning
+Compares formula-based synthetic labels against cascade predictions
+to identify systematic disagreements and produce a ground-truth
+validation report. This addresses the Chief Scientist's critical
+finding: labels are synthetic (2.0/10 validity score).
 
-Key insight: The cascade learned better boundaries than the formula.
-Even though trained on formula labels, the balanced training and
-binary cascade architecture corrects systematic formula errors.
+Output: structured report with per-tier disagreement analysis,
+systematic error patterns, and recommended samples for LLM-as-judge.
 """
-import json, time, math, random, re, sys, os
+import json, time, math, random, re, subprocess, sys
 from datetime import datetime, timezone
 from collections import Counter
 
@@ -20,12 +16,12 @@ def ensure_deps():
     for pkg, mod in [("scikit-learn", "sklearn"), ("numpy", "numpy"), ("datasets", "datasets")]:
         try: __import__(mod)
         except ImportError:
-            import subprocess
             subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", pkg])
 ensure_deps()
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report
 from datasets import load_dataset
 
 # ── Constants ──
@@ -37,7 +33,7 @@ FEATURE_NAMES = [
 ]
 TIERS = ["trivial", "light", "moderate", "heavy", "intensive", "extreme"]
 
-# ── Feature Extraction ──
+# ── Feature Extraction (same as handler_v32_cascade.py) ──
 TECH_KEYWORDS = {
     "api", "http", "rest", "graphql", "websocket", "dns", "ssl", "tls",
     "oauth", "jwt", "cors", "cdn", "docker", "kubernetes", "git",
@@ -83,13 +79,13 @@ def extract_features(text: str) -> dict:
     active = sum(1 for v in [has_code, has_question, has_imperative, tech_terms >= 3] if v)
     four_plus = 1.0 if active >= 4 else 0.0
     return {
-        "word_count": wc, "sentence_count": sc, "avg_word_length": round(awl, 3),
+        "word_count": wc, "sentence_count": sc, "avg_word_length": awl,
         "has_code": float(has_code), "has_question": float(has_question),
         "has_imperative": float(has_imperative), "technical_terms": tech_terms,
         "question_technical": float(question_technical),
         "architecture": float(architecture), "technical_design": float(technical_design),
         "multi_step": float(multi_step), "requires_context": float(requires_context),
-        "domain_specificity": round(domain_spec, 3), "ambiguity_score": round(ambiguity, 3),
+        "domain_specificity": domain_spec, "ambiguity_score": ambiguity,
         "four_plus": four_plus,
     }
 
@@ -99,9 +95,10 @@ def features_to_vector(f: dict) -> list[float]:
 
 
 def label_formula(text: str) -> str:
-    """Original synthetic label formula."""
+    """Original synthetic label formula (Chief Scientist critique target)."""
     t = text.lower()
-    wc = len(t.split())
+    words = t.split()
+    wc = len(words)
     signals = 0
     if '?' in text: signals += 1
     if any(k in t for k in ["code", "function", "def ", "class ", "import ", "``", "fn ", "const "]): signals += 1
@@ -120,6 +117,36 @@ def label_formula(text: str) -> str:
     if score < 0.50: return "heavy"
     if score < 0.65: return "intensive"
     return "extreme"
+
+
+def load_dataset_samples(name: str, max_n: int) -> list[dict]:
+    """Load prompts from HuggingFace with formula labels + features."""
+    catalogs = {
+        "alpaca": {"hf": "tatsu-lab/alpaca", "key": "instruction"},
+        "openorca": {"hf": "Open-Orca/OpenOrca", "key": "question"},
+    }
+    if name not in catalogs:
+        return []
+    c = catalogs[name]
+    try:
+        ds = load_dataset(c["hf"], split=f"train[:{max_n}]", streaming=True)
+        samples = []
+        for x in ds:
+            txt = x.get(c["key"], "")
+            if isinstance(txt, str) and len(txt) > 10:
+                txt = txt.strip()
+                feats = extract_features(txt)
+                formula_label = label_formula(txt)
+                samples.append({
+                    "text": txt[:200],  # truncate for report
+                    "features": feats,
+                    "formula_label": formula_label,
+                    "source": name,
+                })
+        return samples[:max_n]
+    except Exception as e:
+        print(f"  Failed {name}: {e}")
+        return []
 
 
 # ── GPD Synthetic Generator ──
@@ -181,12 +208,16 @@ def generate_gpd(n_trivial: int, n_light: int, seed: int = 42) -> list[dict]:
     return samples
 
 
-# ── Cascade Classifier ──
+# ── Cascade Training (same as v3.2) ──
 class TierCascade:
     def __init__(self):
         self.models = {}
 
     def train(self, train_data: list[dict]):
+        by_tier = {}
+        for s in train_data:
+            by_tier.setdefault(s["formula_label"], []).append(s)
+
         all_features = np.array([features_to_vector(s["features"]) for s in train_data], dtype=np.float64)
         all_labels = np.array([s["formula_label"] for s in train_data])
         results = {}
@@ -229,8 +260,7 @@ class TierCascade:
             self.models[tier] = results[tier]
         return results
 
-    def predict_with_confidence(self, features: dict) -> tuple[str, float]:
-        """Predict tier with confidence score."""
+    def predict(self, features: dict) -> str:
         X = np.array([features_to_vector(features)], dtype=np.float64)
         for tier in ["trivial", "light", "moderate", "heavy", "intensive"]:
             if tier not in self.models:
@@ -239,62 +269,33 @@ class TierCascade:
             w = np.array([m["weights"].get(f, 0) for f in FEATURE_NAMES])
             prob = 1 / (1 + np.exp(-(X @ w + m["intercept"])))
             if prob[0] > 0.5:
-                return tier, float(prob[0])
-        return "extreme", 0.5
+                return tier
+        return "extreme"
 
 
-def load_hf_samples(name: str, max_n: int, key: str) -> list[dict]:
-    """Load from HuggingFace with streaming to avoid OOM."""
-    print(f"  Loading {name} (max {max_n}) via streaming...")
-    ds = load_dataset(name, split="train", streaming=True)
-    samples = []
-    for x in ds:
-        txt = x.get(key, "")
-        if isinstance(txt, str) and len(txt.strip()) > 10:
-            txt = txt.strip()
-            samples.append({
-                "text": txt[:500],
-                "features": extract_features(txt),
-                "formula_label": label_formula(txt),
-                "source": name,
-            })
-            if len(samples) >= max_n:
-                break
-        if len(samples) > 0 and len(samples) % 10000 == 0:
-            print(f"    {name}: {len(samples)}/{max_n}")
-    print(f"  ✅ {name}: {len(samples)} samples")
-    return samples
+# ── Main Handler ──
+def handler(event):
+    inp = event.get("input", {})
+    print(f"MoA v3.3 Label Validation — {datetime.now(timezone.utc).isoformat()}")
 
-
-def main():
-    start = time.time()
-    print(f"MoA v3.3 Label Correction — {datetime.now(timezone.utc).isoformat()}")
-
-    inp = json.loads(sys.argv[1]) if len(sys.argv) > 1 else {}
-    max_alpaca = inp.get("max_alpaca", 50000)
-    max_openorca = inp.get("max_openorca", 50000)
-    gpd_trivial = inp.get("gpd_trivial", 35000)
+    max_per = inp.get("max_per", 20000)
+    gpd_trivial = inp.get("gpd_trivial", 25000)
     gpd_light = inp.get("gpd_light", 10000)
 
-    # 1. Load datasets
-    print("\n  ── Loading Datasets ──")
+    # Load data
     all_samples = []
-
+    print("  Generating GPD...")
     gpd = generate_gpd(gpd_trivial, gpd_light)
     all_samples.extend(gpd)
-    print(f"  ✅ GPD: {len(gpd)} samples")
 
-    alpaca = load_hf_samples("tatsu-lab/alpaca", max_alpaca, "instruction")
-    all_samples.extend(alpaca)
+    for ds_name in ["alpaca"]:
+        print(f"  Loading {ds_name}...")
+        samples = load_dataset_samples(ds_name, max_per)
+        all_samples.extend(samples)
 
-    openorca = load_hf_samples("Open-Orca/OpenOrca", max_openorca, "question")
-    all_samples.extend(openorca)
+    print(f"  Total: {len(all_samples)} samples")
 
-    print(f"\n  Total: {len(all_samples)} samples")
-    label_dist = Counter(s["formula_label"] for s in all_samples)
-    print(f"  Formula distribution: {dict(label_dist)}")
-
-    # 2. Stratified split
+    # Split
     random.seed(42)
     by_label = {}
     for s in all_samples:
@@ -311,145 +312,125 @@ def main():
 
     print(f"  Train: {len(train_data)} | Test: {len(test_data)}")
 
-    # 3. Train cascade
-    print("\n  ── Training Cascade ──")
+    # Train cascade
+    print("  Training cascade...")
     cascade = TierCascade()
     cascade_results = cascade.train(train_data)
-    for tier, r in cascade_results.items():
-        if r.get("success"):
-            print(f"  {tier}: {r['accuracy']:.1%} ({r['n_samples']} samples)")
 
-    # 4. Evaluate cascade vs formula on test set
-    print("\n  ── Evaluating ──")
-    total = len(test_data)
-    correct = 0
-    tier_correct = Counter()
+    # Evaluate cascade vs formula (baseline is 100% by definition since formula=label)
+    # The real analysis: where does the cascade DISAGREE with formula on test data?
+    disagreements = []
+    tier_agreement = Counter()
     tier_total = Counter()
-    low_confidence = 0
 
     for s in test_data:
         formula = s["formula_label"]
-        pred, conf = cascade.predict_with_confidence(s["features"])
+        cascade_pred = cascade.predict(s["features"])
         tier_total[formula] += 1
-        if conf < 0.6:
-            low_confidence += 1
-        if formula == pred:
-            correct += 1
-            tier_correct[formula] += 1
 
-    accuracy = correct / total if total > 0 else 0
-    print(f"  Cascade accuracy: {accuracy:.1%} ({correct}/{total})")
-    print(f"  Low confidence: {low_confidence}/{total} ({low_confidence/total:.1%})")
-    for tier in TIERS:
-        n = tier_total.get(tier, 0)
-        c = tier_correct.get(tier, 0)
-        print(f"    {tier}: {c}/{n} ({c/n:.1%})" if n > 0 else f"    {tier}: 0")
-
-    # 5. Apply cascade labels to FULL dataset (train + test)
-    print("\n  ── Applying Cascade Labels ──")
-    labeled_samples = []
-    high_conf = 0
-    low_conf = 0
-    label_dist_corrected = Counter()
-
-    for s in all_samples:
-        pred, conf = cascade.predict_with_confidence(s["features"])
-        is_high_conf = conf >= 0.6
-        if is_high_conf:
-            high_conf += 1
+        if formula == cascade_pred:
+            tier_agreement[formula] += 1
         else:
-            low_conf += 1
+            disagreements.append({
+                "text": s["text"],
+                "formula_label": formula,
+                "cascade_label": cascade_pred,
+                "source": s["source"],
+                "features": {k: round(s["features"].get(k, 0), 3) for k in ["ambiguity_score", "domain_specificity", "has_question", "has_imperative", "architecture", "word_count", "sentence_count"]},
+            })
 
-        labeled_samples.append({
-            "text": s["text"],
-            "features": s["features"],
-            "source": s["source"],
-            "formula_label": s["formula_label"],
-            "cascade_label": pred,
-            "cascade_confidence": round(conf, 4),
-            "label_quality": "high" if is_high_conf else "low_confidence",
-        })
-        label_dist_corrected[pred] += 1
+    # Per-tier agreement rates
+    tier_agreement_rate = {}
+    for tier in TIERS:
+        total = tier_total.get(tier, 0)
+        agreed = tier_agreement.get(tier, 0)
+        tier_agreement_rate[tier] = {
+            "total": total,
+            "agreed": agreed,
+            "disagreed": total - agreed,
+            "agreement_rate": round(agreed / total, 4) if total > 0 else None,
+        }
 
-    print(f"  High confidence: {high_conf}/{len(all_samples)} ({high_conf/len(all_samples):.1%})")
-    print(f"  Low confidence: {low_conf}/{len(all_samples)} ({low_conf/len(all_samples):.1%})")
-    print(f"  Corrected distribution: {dict(label_dist_corrected)}")
+    # Disagreement pattern analysis
+    pattern_counter = Counter()
+    for d in disagreements:
+        pattern = f"{d['formula_label']}→{d['cascade_label']}"
+        pattern_counter[pattern] += 1
 
-    # 6. Create train/test splits with cascade labels
-    random.seed(42)
-    random.shuffle(labeled_samples)
-    split_idx = int(len(labeled_samples) * 0.8)
-    train_split = labeled_samples[:split_idx]
-    test_split = labeled_samples[split_idx:]
+    # Top 10 disagreement examples per pattern
+    disagreement_examples = {}
+    for pattern in pattern_counter:
+        examples = [d for d in disagreements if f"{d['formula_label']}→{d['cascade_label']}" == pattern]
+        disagreement_examples[pattern] = examples[:10]
 
-    print(f"  Final train: {len(train_split)} | test: {len(test_split)}")
+    # Identify high-value samples for LLM-as-judge (max disagreement across tiers)
+    llm_candidates = []
+    # Pick samples where formula and cascade strongly disagree AND the sample is ambiguous
+    for d in disagreements:
+        if d["features"].get("ambiguity_score", 0) > 0.3:
+            llm_candidates.append(d["text"])
+    # Stratified: pick top 50 per disagreement pattern
+    llm_sample_by_pattern = {}
+    for pattern in pattern_counter:
+        samples_for_pattern = [d for d in disagreements if f"{d['formula_label']}→{d['cascade_label']}" == pattern]
+        llm_sample_by_pattern[pattern] = [s["text"] for s in samples_for_pattern[:50]]
 
-    # 7. Save results
-    elapsed = time.time() - start
+    # Summary
+    total_disagreements = len(disagreements)
+    total_test = len(test_data)
+    overall_agreement = round((total_test - total_disagreements) / total_test, 4) if total_test > 0 else 0
 
     result = {
-        "version": "v3.3-label-correction",
+        "version": "v3.3-label-validation",
         "status": "completed",
         "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
-        "elapsed_seconds": round(elapsed, 1),
         "dataset": {
             "total": len(all_samples),
-            "train": len(train_split),
-            "test": len(test_split),
-            "sources": {
-                "gpd": len(gpd),
-                "alpaca": len(alpaca),
-                "openorca": len(openorca),
-            },
+            "train": len(train_data),
+            "test": total_test,
         },
-        "cascade_performance": {
-            "accuracy": round(accuracy, 4),
-            "correct": correct,
-            "total": total,
-            "low_confidence_count": low_confidence,
-            "low_confidence_pct": round(low_confidence / total, 4),
-            "per_tier": {
-                tier: {
-                    "total": tier_total.get(tier, 0),
-                    "correct": tier_correct.get(tier, 0),
-                    "accuracy": round(tier_correct.get(tier, 0) / max(tier_total.get(tier, 1), 1), 4)
-                }
-                for tier in TIERS
-            },
+        "label_validity": {
+            "overall_agreement_rate": overall_agreement,
+            "total_disagreements": total_disagreements,
+            "interpretation": (
+                "HIGH validity" if overall_agreement > 0.9 else
+                "MODERATE validity" if overall_agreement > 0.7 else
+                "LOW validity — formula labels disagree with learned boundaries"
+            ),
+            "per_tier_agreement": tier_agreement_rate,
         },
-        "label_distribution": {
-            "formula": dict(Counter(s["formula_label"] for s in all_samples)),
-            "cascade": dict(label_dist_corrected),
+        "disagreement_patterns": dict(pattern_counter),
+        "disagreement_examples": {
+            k: [{"text": e[:150], "formula": d["formula_label"], "cascade": d["cascade_label"],
+                  "features": d["features"]}
+                 for e in v[:5]
+                 for d in disagreements if e == d["text"]]
+            for k, v in list(disagreement_examples.items())[:5]
         },
-        "quality_summary": {
-            "high_confidence": high_conf,
-            "low_confidence": low_confidence,
-            "high_confidence_pct": round(high_conf / len(all_samples), 4),
+        "llm_labeling_candidates": {
+            "total_ambiguous_disagreements": len(llm_candidates),
+            "stratified_samples": {k: v[:20] for k, v in llm_sample_by_pattern.items()},
+            "recommendation": f"Label {min(500, len(llm_candidates))} stratified samples with LLM-as-judge for ground truth",
         },
         "cascade_training": {k: {kk: vv for kk, vv in v.items() if kk != "weights"} for k, v in cascade_results.items()},
     }
 
-    # Save full result
-    with open("v33_label_correction_result.json", "w") as f:
-        json.dump(result, f, indent=2)
-
-    # Save labeled dataset (train + test) as JSONL
-    with open("v33_labeled_train.jsonl", "w") as f:
-        for s in train_split:
-            f.write(json.dumps(s) + "\n")
-
-    with open("v33_labeled_test.jsonl", "w") as f:
-        for s in test_split:
-            f.write(json.dumps(s) + "\n")
-
-    print(f"\n  ── Output Files ──")
-    print(f"  v33_label_correction_result.json ({os.path.getsize('v33_label_correction_result.json')} bytes)")
-    print(f"  v33_labeled_train.jsonl ({os.path.getsize('v33_labeled_train.jsonl')} bytes)")
-    print(f"  v33_labeled_test.jsonl ({os.path.getsize('v33_labeled_test.jsonl')} bytes)")
-    print(f"  Elapsed: {elapsed:.1f}s")
+    # Print summary
+    print(f"\n  === LABEL VALIDITY REPORT ===")
+    print(f"  Overall agreement: {overall_agreement:.1%}")
+    print(f"  Total disagreements: {total_disagreements}/{total_test}")
+    print(f"\n  Per-tier agreement:")
+    for tier in TIERS:
+        ta = tier_agreement_rate.get(tier, {})
+        print(f"    {tier}: {ta.get('agreement_rate', 'N/A'):.1%} ({ta.get('agreed', 0)}/{ta.get('total', 0)})")
+    print(f"\n  Disagreement patterns:")
+    for pattern, count in pattern_counter.most_common(10):
+        print(f"    {pattern}: {count}")
+    print(f"\n  LLM candidates: {len(llm_candidates)} ambiguous disagreements")
 
     return result
 
 
 if __name__ == "__main__":
-    main()
+    result = handler({"input": {"max_per": 20000, "gpd_trivial": 25000, "gpd_light": 10000}})
+    print(json.dumps(result, indent=2))

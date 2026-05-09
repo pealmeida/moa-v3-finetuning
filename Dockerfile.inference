@@ -1,0 +1,18 @@
+FROM ghcr.io/pealmeida/moa-v3-finetuning:latest
+
+WORKDIR /workspace
+
+# Install runpod SDK
+RUN /opt/venv/bin/pip install --no-cache-dir runpod numpy || \
+    pip install --no-cache-dir --break-system-packages runpod numpy || \
+    pip3 install --no-cache-dir runpod numpy
+
+# Copy inference handler + pre-trained weights
+COPY handler_v33_inference.py /workspace/handler_v33_inference.py
+COPY v32_cascade_weights.json /workspace/v32_cascade_weights.json
+
+# Health check: verify weights are loadable
+RUN python3 -c "import json; d=json.load(open('/workspace/v32_cascade_weights.json')); print(f'Weights OK: {len(d.get(\"classifiers\",{}))} classifiers')"
+
+# Default: production inference handler
+CMD ["python3", "-u", "/workspace/handler_v33_inference.py"]

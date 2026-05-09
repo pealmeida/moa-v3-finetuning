@@ -1,0 +1,16 @@
+FROM ghcr.io/pealmeida/moa-v3-finetuning:latest
+
+WORKDIR /workspace
+
+# Install runpod SDK (don't hide errors)
+RUN /opt/venv/bin/pip install --no-cache-dir runpod || pip install --no-cache-dir --break-system-packages runpod || pip3 install --no-cache-dir runpod
+
+# Copy handler files
+COPY handler_v33_label_correction.py /workspace/handler_v33_label_correction.py
+COPY handler_v33_llm_labeling.py /workspace/handler_v33_llm_labeling.py
+COPY runpod_handler.py /workspace/runpod_handler.py
+COPY test_handler.py /workspace/test_handler.py
+COPY handler.py /workspace/handler.py
+
+# Default: test handler to verify endpoint works
+CMD ["/opt/venv/bin/python", "-u", "/workspace/test_handler.py"]

@@ -3,8 +3,17 @@ FROM ghcr.io/pealmeida/moa-v3-finetuning:latest
 WORKDIR /workspace
 
 RUN /opt/venv/bin/pip install --no-cache-dir --break-system-packages scikit-learn || /opt/venv/bin/pip install --no-cache-dir scikit-learn
+RUN /opt/venv/bin/pip install --no-cache-dir --break-system-packages runpod || /opt/venv/bin/pip install --no-cache-dir runpod
 
+# v3.3 label correction handler (copied from handler_v33_label_correction.py)
 COPY handler.py /workspace/handler.py
 
+# RunPod serverless wrapper
+COPY runpod_handler.py /workspace/runpod_handler.py
+
+# Entrypoint uses runpod SDK for serverless job processing
 COPY entrypoint.sh /workspace/entrypoint.sh
 RUN chmod +x /workspace/entrypoint.sh
+
+# Use the RunPod handler as the default command
+CMD ["python3", "-u", "/workspace/runpod_handler.py"]

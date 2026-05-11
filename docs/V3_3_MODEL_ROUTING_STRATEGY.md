@@ -1,4 +1,4 @@
-# MoA v3.3 — 6-Model Cost-Efficient Routing Strategy
+# GateSwarm MoA Router v0.3.5 — 6-Model Cost-Efficient Routing Strategy
 
 **Date:** 2026-05-08
 **Author:** Chief Scientist / AI Architect Specialist

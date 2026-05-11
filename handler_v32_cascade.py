@@ -1,4 +1,4 @@
-"""MoA v3.2 — Tier-Pair Binary Classifier Cascade
+"""GateSwarm MoA Router v0.3 — Tier-Pair Binary Classifier Cascade
 
 Instead of one global regression for 6 tiers, trains 5 independent
 binary classifiers per boundary:
@@ -557,7 +557,7 @@ def evaluate_baseline(test_data: list[dict]) -> dict:
 # ── Main Handler ──
 def handler(event):
     inp = event.get("input", {})
-    print(f"MoA v3.2 Tier-Pair Cascade — {datetime.now(timezone.utc).isoformat()}")
+    print(f"GateSwarm MoA Router v0.3 Tier-Pair Cascade — {datetime.now(timezone.utc).isoformat()}")
 
     datasets = inp.get("datasets", ["gpd", "alpaca"])
     max_per = inp.get("max_per", 20000)
@@ -674,7 +674,7 @@ def handler(event):
 
     # ── Result ──
     result = {
-        "version": "v3.2-cascade",
+        "version": "v0.3-cascade",
         "status": "completed",
         "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "config": {

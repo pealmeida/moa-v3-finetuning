@@ -1,4 +1,4 @@
-"""MoA v3.1 — Massive Multi-Dataset Per-Tier Accuracy Test
+"""GateSwarm MoA Router v0.2 — Massive Multi-Dataset Per-Tier Accuracy Test
 
 Trains on 3 combined datasets for FULL 6-tier coverage:
 1. GPD (50K synthetic) — trivial + light
@@ -416,7 +416,7 @@ def evaluate_per_tier(test_feats: list, test_labels: list, weights: dict, baseli
 # ── Main Handler ──
 def handler(event):
     inp = event.get("input", {})
-    print(f"MoA v3.1 Massive Per-Tier Test — {datetime.utcnow().isoformat()}Z")
+    print(f"GateSwarm MoA Router v0.2 Massive Per-Tier Test — {datetime.utcnow().isoformat()}Z")
 
     datasets = inp.get("datasets", ["gpd", "alpaca", "openorca"])
     max_per = inp.get("max_per", 20000)

@@ -2,7 +2,7 @@
 # MOA v3 Finetuning entrypoint for RunPod Serverless
 set -e
 
-echo "=== MoA v3 Finetuning Entrypoint ==="
+echo "=== GateSwarm MoA Router Entrypoint ==="
 echo "Starting at: $(date -u)"
 
 # Install dependencies if not present

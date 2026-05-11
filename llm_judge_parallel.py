@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MoA v3.3 — LLM-as-Judge Pipeline (Parallel, GPU Pod Optimized)
+"""GateSwarm MoA Router v0.3.5 — LLM-as-Judge Pipeline (Parallel, GPU Pod Optimized)
 
 Run on RunPod pod with SSH. Uses asyncio for 20 concurrent LLM API calls.
 Expected: 1,496 samples in ~5-8 min instead of 60+ min.
@@ -206,7 +206,7 @@ def predict_cascade(models, x):
 
 def main():
     t0 = time.time()
-    print(f"=== MoA v3.3 LLM-as-Judge (Parallel, {CONCURRENT} concurrent) ===")
+    print(f"=== GateSwarm MoA Router v0.3.5 LLM-as-Judge (Parallel, {CONCURRENT} concurrent) ===")
     print(f"  ZAI API: {ZAI_BASE}")
     print(f"  Key: {ZAI_KEY[:15]}...")
     
@@ -308,7 +308,7 @@ def main():
     
     # Export
     weights = {
-        "version": "v3.3-llm-judged",
+        "version": "v0.3.5-llm-judged",
         "trained": datetime.now(timezone.utc).isoformat() + "Z",
         "dataset": f"{len(all_samples)} LLM-judged (Alpaca, glm-4.7-flash)",
         "method": "pairwise-cascade-on-llm-labels",

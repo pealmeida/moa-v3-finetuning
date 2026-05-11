@@ -1,4 +1,4 @@
-"""MoA v3.3 — Label Validation Handler
+"""GateSwarm MoA Router v0.3.5 — Label Validation Handler
 
 Compares formula-based synthetic labels against cascade predictions
 to identify systematic disagreements and produce a ground-truth
@@ -276,7 +276,7 @@ class TierCascade:
 # ── Main Handler ──
 def handler(event):
     inp = event.get("input", {})
-    print(f"MoA v3.3 Label Validation — {datetime.now(timezone.utc).isoformat()}")
+    print(f"GateSwarm MoA Router v0.3.5 Label Validation — {datetime.now(timezone.utc).isoformat()}")
 
     max_per = inp.get("max_per", 20000)
     gpd_trivial = inp.get("gpd_trivial", 25000)
@@ -381,7 +381,7 @@ def handler(event):
     overall_agreement = round((total_test - total_disagreements) / total_test, 4) if total_test > 0 else 0
 
     result = {
-        "version": "v3.3-label-validation",
+        "version": "v0.3.5-label-validation",
         "status": "completed",
         "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "dataset": {

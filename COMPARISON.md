@@ -1,4 +1,4 @@
-# MoA Router — Heuristic Evolution: v1 → v2 → v3 → v3.1
+# GateSwarm MoA Router — Heuristic Evolution: v0.1 → v0.2 → v0.3
 
 ## Executive Summary
 
@@ -6,19 +6,19 @@
 |---------|---------|----------|--------|------|----------|
 | **v1** | 15 manual prompts | 53% (8/15) | Static hand-tuned weights | 2026-05-05 | Local |
 | **v2** | 15 manual prompts | 67% (10/15) | Manual tuning + bonuses | 2026-05-06 | Local |
-| **v2.1** | 30 manual prompts | 40% (12/30) | Architecture/tech_design bonuses | 2026-05-06 | Local |
-| **v3.0** | 10K Alpaca prompts | **87.2%** (1744/2000) | MSE optimization (scipy L-BFGS-B) | 2026-05-07 | RunPod Serverless |
-| **v3.1-GPD** | 15K GPD (trivial+light) | **72.7%** | MSE opt + balanced weights | 2026-05-08 | RunPod Serverless |
-| **v3.1-Massive** | 75K (GPD+Alpaca+OpenOrca) | **42.8%** | Global MSE optimization | 2026-05-08 | RunPod Serverless |
-| **v3.2-Cascade** | 75K (GPD+Alpaca+OpenOrca) | **74.7%** | Tier-pair binary cascade | 2026-05-08 | RunPod Serverless |
+| **v0.2.1** | 30 manual prompts | 40% (12/30) | Architecture/tech_design bonuses | 2026-05-06 | Local |
+| **v0.3.0** | 10K Alpaca prompts | **87.2%** (1744/2000) | MSE optimization (scipy L-BFGS-B) | 2026-05-07 | RunPod Serverless |
+| **v0.3.1-GPD** | 15K GPD (trivial+light) | **72.7%** | MSE opt + balanced weights | 2026-05-08 | RunPod Serverless |
+| **v0.3.1-Massive** | 75K (GPD+Alpaca+OpenOrca) | **42.8%** | Global MSE optimization | 2026-05-08 | RunPod Serverless |
+| **v0.3.2-Cascade** | 75K (GPD+Alpaca+OpenOrca) | **74.7%** | Tier-pair binary cascade | 2026-05-08 | RunPod Serverless |
 
 ---
 
-## v3.1 — Self-Optimizing Gateway (2026-05-08)
+## v0.3.1 — Self-Optimizing Gateway (2026-05-08)
 
-### What Changed from v3.0
+### What Changed from v0.3.0
 
-| Aspect | v3.0 | v3.1 |
+| Aspect | v0.3.0 | v0.3.1 |
 |--------|------|------|
 | **Feature vector** | 13 features | 15 features (+ ambiguity_score, domain_specificity) |
 | **Datasets** | Alpaca only (moderate+ bias) | GPD (50K trivial/light) + Alpaca + workspace |
@@ -29,7 +29,7 @@
 | **Feedback loop** | None | Self-evaluation + SQLite buffer |
 | **Platform** | RunPod Serverless | Local CPU + RunPod Serverless |
 
-### v3.1 Results by Dataset
+### v0.3.1 Results by Dataset
 
 | Dataset | Samples | Baseline | Optimized | Improvement |
 |---------|---------|----------|-----------|-------------|
@@ -37,16 +37,16 @@
 | **Alpaca (10K)** | 10,000 | 2.3% | **87.2%** | +84.9% |
 | **Workspace (2.5K)** | 2,502 | — | — | *Multi-tier* |
 
-### Per-Tier Accuracy (v3.1 GPD)
+### Per-Tier Accuracy (v0.3.1 GPD)
 
 | Tier | Test Samples | Accuracy |
 |------|-------------|----------|
 | **Trivial** | 7,050 | **100.0%** |
 | **Light** | 2,950 | **98.5%** |
 
-### v3.1 Optimized Weights (GPD 50K)
+### v0.3.1 Optimized Weights (GPD 50K)
 
-| Feature | v3.0 (Alpaca) | v3.1 (GPD) |
+| Feature | v0.3.0 (Alpaca) | v0.3.1 (GPD) |
 |---------|---------------|------------|
 | ambiguity_score | — | **0.6041** |
 | sentence_count | **0.2915** | 0.0000 |
@@ -60,7 +60,7 @@
 
 ---
 
-## v3.0 — MSE Optimization (2026-05-07)
+## v0.3.0 — MSE Optimization (2026-05-07)
 
 ### Pipeline
 
@@ -76,7 +76,7 @@
 
 ### Per-Tier Breakdown (Alpaca 10K)
 
-| Tier | Test Samples | v2.1 | v3.0 | Δ |
+| Tier | Test Samples | v0.2.1 | v0.3.0 | Δ |
 |------|-------------|------|------|---|
 | trivial | 0 | — | — | — |
 | light | 0 | — | — | — |
@@ -95,9 +95,9 @@
 
 ---
 
-## v2.1 → v3.0 Weight Changes
+## v0.2.1 → v0.3.0 Weight Changes
 
-| Feature | v2.1 | v3.0 | Δ | Interpretation |
+| Feature | v0.2.1 | v0.3.0 | Δ | Interpretation |
 |---------|------|------|---|----------------|
 | **sentence_count** | 0.03 | **0.29** | ↑↑↑ | Multi-sentence = harder |
 | **avg_word_length** | 0.02 | **0.19** | ↑↑↑ | Longer words = technical |
@@ -132,19 +132,19 @@
 - 40% on 30 prompts
 - **Lesson:** Manual tuning fundamentally doesn't scale
 
-### v3.0 — MSE Optimization (2026-05-07)
+### v0.3.0 — MSE Optimization (2026-05-07)
 - 10K Alpaca prompts, scipy L-BFGS-B, 87.2% accuracy
 - **Breakthrough:** Data-driven optimization replaces manual tuning
 - Deployed on RunPod Serverless (35s execution)
 
-### v3.1 — Self-Optimizing Gateway (2026-05-08)
+### v0.3.1 — Self-Optimizing Gateway (2026-05-08)
 - 50K GPD synthetic + workspace data, 99.6% on light tier
 - LLMFit Dataset Factory for personalized training
 - 35-rule anonymization engine
 - Self-evaluation feedback loop
 - **Breakthrough:** Users can create their own optimized datasets
 
-### v3.1 Massive Per-Tier Test (2026-05-08)
+### v0.3.1 Massive Per-Tier Test (2026-05-08)
 - 75K samples (GPD 35K + Alpaca 20K + OpenOrca 20K)
 - Full 6-tier per-tier accuracy evaluation
 - RunPod Serverless: 8.4s execution
@@ -167,7 +167,7 @@
 ## Lessons Learned
 
 1. **Manual tuning doesn't scale** — v1→v2: 53%→67% on 15 prompts, then 40% on 30
-2. **Data-driven optimization wins** — v3.0: +84.9pp with 10K prompts
+2. **Data-driven optimization wins** — v0.3.0: +84.9pp with 10K prompts
 3. **Dataset bias matters** — Alpaca has no trivial/light; GPD fills that gap
 4. **Merge datasets for balance** — GPD + Alpaca = full-tier coverage
 5. **Anonymization is essential** — User data must be sanitized before training

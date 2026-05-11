@@ -1,4 +1,4 @@
-"""MoA v3.1 Fine-Tuning — RunPod Serverless Training Handler
+"""GateSwarm MoA Router v0.2 Fine-Tuning — RunPod Serverless Training Handler
 
 Trains optimized heuristic weights for the MoA Gateway Router using:
 1. Downloaded public datasets (anonymized)
@@ -9,8 +9,8 @@ Privacy: All datasets are anonymized before training. No PII, secrets,
 or personal context leaves the workspace.
 
 Usage:
-  Submit job: {"version": "v3.1", "datasets": ["gpd", "alpaca"], "max_per": 20000}
-  Custom upload: {"version": "v3.1", "dataset_url": "https://.../anonymized.jsonl"}
+  Submit job: {"version": "v0.2", "datasets": ["gpd", "alpaca"], "max_per": 20000}
+  Custom upload: {"version": "v0.2", "dataset_url": "https://.../anonymized.jsonl"}
 """
 import os, sys, json, time, re, math, subprocess, hashlib, tempfile
 from typing import Optional
@@ -340,7 +340,7 @@ def evaluate_accuracy(test_features: list, test_labels: list, weights: dict) -> 
 
 def handler(event):
     inp = event.get("input", {})
-    version = inp.get("version", "v3.1")
+    version = inp.get("version", "v0.2")
 
     # Configuration
     dataset_names = inp.get("datasets", ["gpd", "alpaca"])
@@ -349,7 +349,7 @@ def handler(event):
     max_iter = inp.get("max_iter", 2000)
     init_weights = inp.get("init_weights")
 
-    print(f"MoA v3.1 Training — {datetime.utcnow().isoformat()}Z")
+    print(f"GateSwarm MoA Router v0.2 Training — {datetime.utcnow().isoformat()}Z")
     print(f"Datasets: {dataset_names}")
     print(f"Max per dataset: {max_per}")
 
@@ -469,7 +469,7 @@ def handler(event):
 if __name__ == "__main__":
     result = handler({
         "input": {
-            "version": "v3.1",
+            "version": "v0.2",
             "datasets": ["alpaca"],
             "max_per": 10000,
         }

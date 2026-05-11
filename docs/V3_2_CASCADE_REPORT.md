@@ -1,4 +1,4 @@
-# MoA v3.2 — Tier-Pair Binary Cascade: Final Results
+# GateSwarm MoA Router v0.3 — Tier-Pair Binary Cascade: Final Results
 
 **Date:** 2026-05-08  
 **Platform:** RunPod Serverless (RTX 4090)  

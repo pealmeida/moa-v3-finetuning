@@ -1,4 +1,4 @@
-"""MoA v3.3 — Production Inference Handler
+"""GateSwarm MoA Router v0.3.5 — Production Inference Handler
 
 RunPod Serverless handler for real-time complexity scoring and model routing.
 Loads pre-trained cascade weights, extracts features, predicts tier + confidence,
@@ -332,7 +332,7 @@ def fallback_score(features: dict) -> tuple[str, float, float]:
 # ── RunPod Handler ──
 def handler(event):
     """
-    RunPod serverless handler for MoA v3.3 complexity scoring.
+    RunPod serverless handler for GateSwarm MoA Router v0.3.5 complexity scoring.
 
     Input:
       {
@@ -418,7 +418,7 @@ def handler(event):
             "total_latency_ms": total_ms,
         }
 
-    output["version"] = "v3.3-inference"
+    output["version"] = "v0.3.5-inference"
     output["timestamp"] = datetime.now(timezone.utc).isoformat() + "Z"
 
     return output

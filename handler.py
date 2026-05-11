@@ -1,4 +1,4 @@
-"""MoA v3.3 — Label Correction Handler
+"""GateSwarm MoA Router v0.3.5 — Label Correction Handler
 
 Creates a clean, fully labeled dataset for v3.3 training by:
 1. Loading Alpaca (50K) + OpenOrca (50K) via streaming
@@ -268,7 +268,7 @@ def load_hf_samples(name: str, max_n: int, key: str) -> list[dict]:
 
 def main():
     start = time.time()
-    print(f"MoA v3.3 Label Correction — {datetime.now(timezone.utc).isoformat()}")
+    print(f"GateSwarm MoA Router v0.3.5 Label Correction — {datetime.now(timezone.utc).isoformat()}")
 
     inp = json.loads(sys.argv[1]) if len(sys.argv) > 1 else {}
     max_alpaca = inp.get("max_alpaca", 50000)
@@ -388,7 +388,7 @@ def main():
     elapsed = time.time() - start
 
     result = {
-        "version": "v3.3-label-correction",
+        "version": "v0.3.5-label-correction",
         "status": "completed",
         "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "elapsed_seconds": round(elapsed, 1),

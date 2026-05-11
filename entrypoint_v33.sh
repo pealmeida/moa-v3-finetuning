@@ -5,7 +5,7 @@
 set -e
 cd /workspace
 
-echo "=== MoA v3.3 Label Correction ==="
+echo "=== GateSwarm MoA Router v0.3.5 Label Correction ==="
 echo "Starting: $(date -u)"
 
 pip install --quiet scipy numpy scikit-learn datasets runpod requests 2>/dev/null || true

@@ -1,4 +1,4 @@
-# MoA v3 Finetuning — Self-Optimizing Gateway Router
+# GateSwarm MoA Router — Self-Optimizing Gateway Router
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
@@ -15,16 +15,17 @@ Automatically tunes the heuristic router that classifies prompt complexity into 
 
 | Version | Method | Dataset | Baseline | Optimized | Improvement | Platform |
 |---------|--------|---------|----------|-----------|-------------|----------|
-| v1 | Static weights | 15 prompts | — | 53% | — | Local |
-| v2 | Manual tuning | 15 prompts | 53% | 67% | +14pp | Local |
-| v2.1 | Manual tuning | 30 prompts | 67% | 40% | -27pp (overfit) | Local |
-| **v3.0** | MSE optimization | 10K Alpaca | 2.3% | **87.2%** | **+84.9%** | RunPod |
-| **v3.1** | MSE + balanced | 50K GPD | 19.3% | **99.6%** | **+80.2%** | Local/RunPod |
-| **v3.2** | **Binary cascade** | **75K (3 datasets)** | **24.3%** | **74.7%** | **+50.4pp** | **RunPod** |
+| v0.1.0 | Static weights | 15 prompts | — | 53% | — | Local |
+| v0.2.0 | Manual tuning | 15 prompts | 53% | 67% | +14pp | Local |
+| v0.2.1 | Manual tuning | 30 prompts | 67% | 40% | -27pp (overfit) | Local |
+| **v0.3.0** | MSE optimization | 10K Alpaca | 2.3% | **87.2%** | **+84.9%** | RunPod |
+| **v0.3.1** | MSE + balanced | 50K GPD | 19.3% | **99.6%** | **+80.2%** | Local/RunPod |
+| **v0.3.2** | **Binary cascade** | **75K (3 datasets)** | **24.3%** | **74.7%** | **+50.4pp** | **RunPod** |
+| **v0.3.5** | **Label correction + LLM judge** | **75K+** | — | **Production** | — | **RunPod** |
 
-### Per-Tier Accuracy (v3.2 — All 6 Tiers)
+### Per-Tier Accuracy (v0.3.2 — All 6 Tiers)
 
-| Tier | Test Samples | Baseline (v3.0) | Cascade (v3.2) | Δ |
+| Tier | Test Samples | Baseline (v0.3.0) | Cascade (v0.3.2) | Δ |
 |------|-------------|-----------------|----------------|---|
 | **Trivial** | 5,000 | 23.0% | **100.0%** | +77.0pp |
 | **Light** | 3,373 | 56.5% | **93.1%** | +36.6pp |
@@ -40,7 +41,7 @@ Automatically tunes the heuristic router that classifies prompt complexity into 
 
 ## Architecture
 
-### v3.0/v3.1 — Global Optimization
+### v0.3.0/v0.3.1 — Global Optimization
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
@@ -55,7 +56,7 @@ Automatically tunes the heuristic router that classifies prompt complexity into 
                         ambiguity_score, ...
 ```
 
-### v3.2 — Tier-Pair Binary Cascade
+### v0.3.2 — Tier-Pair Binary Cascade
 
 ```
 Input Prompt
@@ -142,19 +143,19 @@ Input Prompt
 ## Project Structure
 
 ```
-moa-v3-finetuning/
+gateswarm-moa-router/
 ├── README.md                     # This file
-├── CHANGELOG.md                  # Version history (v1 → v3.2)
-├── COMPARISON.md                 # Detailed v1→v2→v3→v3.2 evolution
+├── CHANGELOG.md                  # Version history (v0.1 → v0.3.5)
+├── COMPARISON.md                 # Detailed v0.1→v0.2→v0.3 evolution
 ├── CONTRIBUTING.md               # Contribution guidelines
 ├── LICENSE                       # MIT License
 ├── .gitignore
 ├── .dockerignore
 │
-├── handler.py                    # Active handler (v3.2 cascade)
-├── handler_v31.py                # v3.1 handler (GPD + multi-dataset)
-├── handler_v31_massive.py        # v3.1 massive per-tier test
-├── handler_v32_cascade.py        # v3.2 tier-pair binary cascade
+├── handler.py                    # Active handler (v0.3.5 label correction)
+├── handler_v31.py                # v0.2 handler (GPD + multi-dataset)
+├── handler_v31_massive.py        # v0.2 massive per-tier test
+├── handler_v32_cascade.py        # v0.3 cascade handler
 ├── Dockerfile                    # Standard build
 ├── Dockerfile.serverless         # RunPod Serverless container
 ├── Dockerfile.train              # Training container (SSH debug)
@@ -165,8 +166,8 @@ moa-v3-finetuning/
 │   ├── llmfit.py                 # Core engine: extract → label → validate → optimize
 │   ├── self_eval.py              # Self-evaluation + feedback buffer (SQLite)
 │   ├── anonymizer.py             # 35-rule PII/secret/context anonymization
-│   ├── handler_v31.py            # v3.1 training handler (copy)
-│   ├── handler_v31_massive.py    # v3.1 massive test handler (copy)
+│   ├── handler_v31.py            # v0.3.1 training handler (copy)
+│   ├── handler_v31_massive.py    # v0.3.1 massive test handler (copy)
 │   └── datasets/
 │       ├── gpd_generator.py      # Generate 50K synthetic trivial/light prompts
 │       ├── general-purpose/
@@ -178,10 +179,10 @@ moa-v3-finetuning/
 │       └── workspace_weights.json
 │
 └── docs/
-    ├── ARCHITECTURE_V3_1.md       # Full v3.1 architecture spec (38KB)
-    ├── TRAINING_REPORT_V3_1.md    # v3.1 training results & anonymization
-    ├── PER_TIER_TEST_REPORT.md    # v3.1 massive per-tier test analysis
-    └── V3_2_CASCADE_REPORT.md     # v3.2 cascade final report
+    ├── ARCHITECTURE_V3_1.md       # Full v0.3.1 architecture spec (38KB)
+    ├── TRAINING_REPORT_V3_1.md    # v0.3.1 training results & anonymization
+    ├── PER_TIER_TEST_REPORT.md    # v0.3.1 massive per-tier test analysis
+    └── V3_2_CASCADE_REPORT.md     # v0.3.2 cascade final report
 ```
 
 ---
@@ -194,16 +195,16 @@ moa-v3-finetuning/
 # Install dependencies
 pip install scipy numpy scikit-learn datasets runpod requests
 
-# v3.0 — Alpaca baseline (10K prompts)
+# v0.3.0 — Alpaca baseline (10K prompts)
 python handler_v31.py
 
-# v3.1 — GPD dataset (50K synthetic)
+# v0.3.1 — GPD dataset (50K synthetic)
 python handler_v31.py
 
-# v3.1 massive — 3 datasets (75K)
+# v0.3.1 massive — 3 datasets (75K)
 python handler_v31_massive.py
 
-# v3.2 cascade — binary classifiers (recommended)
+# v0.3.2 cascade — binary classifiers (recommended)
 python handler_v32_cascade.py
 ```
 
@@ -211,9 +212,9 @@ python handler_v32_cascade.py
 
 ```bash
 # Build and push Docker image
-docker build -t ghcr.io/pealmeida/moa-v3-finetuning:latest \
+docker build -t ghcr.io/pealmeida/gateswarm-moa-router:latest \
   -f Dockerfile.serverless .
-docker push ghcr.io/pealmeida/moa-v3-finetuning:latest
+docker push ghcr.io/pealmeida/gateswarm-moa-router:latest
 
 # Submit training job
 curl -X POST "https://api.runpod.ai/v2/<endpoint_id>/run" \
@@ -276,7 +277,7 @@ for tier, data in result['cascade']['tier_accuracy'].items():
 
 ---
 
-## v3.2 Cascade — Classifier Details
+## v0.3.2 Cascade — Classifier Details
 
 | Classifier | Train Accuracy | Samples | Top Feature | 2nd Feature | 3rd Feature |
 |------------|---------------|---------|-------------|-------------|-------------|
@@ -312,7 +313,7 @@ See `llmfit/anonymizer.py` for the full rule set.
 
 ## Performance
 
-| Metric | v3.0 | v3.1 | v3.2 |
+| Metric | v0.3.0 | v0.3.1 | v0.3.2 |
 |--------|------|------|------|
 | **Dataset** | 10K Alpaca | 50K GPD | 75K (3 datasets) |
 | **Training time** | 35s (RTX 4090) | 2s (CPU) | 58s (RTX 4090) |
@@ -320,14 +321,14 @@ See `llmfit/anonymizer.py` for the full rule set.
 | **Convergence** | 31 iterations | 48 iterations | 5 classifiers |
 | **Overall accuracy** | 87.2% | 99.6%* | 74.7%** |
 
-\* v3.1 targets trivial/light only (2 tiers)  
-\*\* v3.2 covers all 6 tiers
+* v0.3.1 targets trivial/light only (2 tiers)  
+** v0.3.2 covers all 6 tiers
 
-### Why CPU is sufficient for v3.0/v3.1
+### Why CPU is sufficient for v0.3.0/v0.3.1
 
 The optimization is a **15-parameter L-BFGS-B MSE minimization** over 8K-50K training examples. Pure numerical optimization — no GPU needed.
 
-GPU is only needed for v3.2 (scikit-learn LogisticRegression on larger balanced datasets).
+GPU is only needed for v0.3.2 (scikit-learn LogisticRegression on larger balanced datasets).
 
 ---
 
@@ -363,7 +364,7 @@ Generates 50,000 synthetic prompts from 70+ templates:
 | Scenario | 10K req/day | 100K req/day | 1M req/day |
 |----------|-------------|--------------|------------|
 | **Baseline (always Opus)** | $6.36 | $63.59 | $635.94 |
-| **v3.0 routed** | $0.24 | $2.35 | $23.54 |
+| **v0.3.0 routed** | $0.24 | $2.35 | $23.54 |
 | **Savings** | **96.3%** | **96.3%** | **96.3%** |
 
 Training cost per run: **~$0.01** (58s on RTX 4090 via RunPod Serverless)
@@ -372,7 +373,7 @@ Training cost per run: **~$0.01** (58s on RTX 4090 via RunPod Serverless)
 
 ## Reproduction
 
-### v3.0 — Alpaca baseline
+### v0.3.0 — Alpaca baseline
 
 ```bash
 # Deploy to RunPod, submit job:
@@ -380,7 +381,7 @@ Training cost per run: **~$0.01** (58s on RTX 4090 via RunPod Serverless)
 # Expected: 87.2% accuracy in ~460s (cold start + 35s execution)
 ```
 
-### v3.1 — GPD (local)
+### v0.3.1 — GPD (local)
 
 ```bash
 pip install scipy numpy datasets
@@ -388,7 +389,7 @@ python handler_v31.py
 # Expected: 99.6% accuracy on GPD 50K (trivial 100%, light 98.5%)
 ```
 
-### v3.2 — Cascade (RunPod recommended)
+### v0.3.2 — Cascade (RunPod recommended)
 
 ```bash
 pip install scipy numpy scikit-learn datasets runpod requests
@@ -400,9 +401,9 @@ python handler_v32_cascade.py
 
 ## Version History
 
-See [CHANGELOG.md](./CHANGELOG.md) for the full version history and [COMPARISON.md](./COMPARISON.md) for detailed v1→v2→v3→v3.2 analysis.
+See [CHANGELOG.md](./CHANGELOG.md) for the full version history and [COMPARISON.md](./COMPARISON.md) for detailed v0.1→v0.2→v0.3 evolution.
 
-### v3.3 — 6-Model Cost-Efficient Routing (Planned)
+### v0.3.6 — 6-Model Cost-Efficient Routing (Planned)
 
 The next step is **specialized model assignment per tier** — using the cheapest model that can reliably handle each tier's requirements:
 
@@ -446,10 +447,10 @@ MIT License — see [LICENSE](LICENSE) for details.
 If you use this in your research:
 
 ```bibtex
-@misc{moa-v3-finetuning,
-  title={MoA v3 Finetuning: Self-Optimizing Gateway Router for Complexity Classification},
+@misc{gateswarm-moa-router,
+  title={GateSwarm MoA Router: Self-Optimizing Gateway Router for Complexity Classification},
   author={Pedro Almeida},
   year={2026},
-  url={https://github.com/pealmeida/moa-v3-finetuning}
+  url={https://github.com/pealmeida/gateswarm-moa-router}
 }
 ```

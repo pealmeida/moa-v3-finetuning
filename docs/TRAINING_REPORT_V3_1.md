@@ -1,4 +1,4 @@
-# MoA v3.1 Training Report — Anonymized & Generalized
+# GateSwarm MoA Router v0.2 Training Report — Anonymized & Generalized
 
 **Date:** 2026-05-08 03:05 GMT-3  
 **Status:** ✅ Training Complete  

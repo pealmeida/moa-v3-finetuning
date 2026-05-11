@@ -1,4 +1,4 @@
-"""MoA v3.3 — Label Correction + Weight Export
+"""GateSwarm MoA Router v0.3.5 — Label Correction + Weight Export
 
 Runs on RunPod serverless to:
 1. Load Alpaca + OpenOrca datasets
@@ -225,7 +225,7 @@ def handler(event):
     inp = event.get("input", {})
     max_per = inp.get("max_per", 8000)
 
-    print(f"=== MoA v3.3 Label Correction + Weight Export ===")
+    print(f"=== GateSwarm MoA Router v0.3.5 Label Correction + Weight Export ===")
     print(f"  max_per: {max_per}")
 
     # 1. Load Alpaca
@@ -287,7 +287,7 @@ def handler(event):
 
     # 6. Build exportable weights (same format as v32_cascade_weights.json)
     cascade_weights = {
-        "version": "v3.3-cascade-corrected",
+        "version": "v0.3.5-cascade-corrected",
         "trained": datetime.now(timezone.utc).isoformat() + "Z",
         "dataset": f"{len(all_samples)} (Alpaca{'+OpenOrca' if openorca else ''})",
         "overall_accuracy": eval_result["accuracy"],
@@ -305,7 +305,7 @@ def handler(event):
     elapsed = round(time.time() - t0, 1)
 
     return {
-        "version": "v3.3-label-correction",
+        "version": "v0.3.5-label-correction",
         "status": "completed",
         "elapsed_seconds": elapsed,
         "dataset_stats": {

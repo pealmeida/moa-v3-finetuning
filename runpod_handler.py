@@ -1,5 +1,5 @@
 """
-RunPod Serverless wrapper for MoA v3.3 Label Correction Handler.
+RunPod Serverless wrapper for GateSwarm MoA Router v0.3.5 Label Correction Handler.
 This wraps the handler to work with RunPod's serverless job queue.
 """
 import os, sys, subprocess, json

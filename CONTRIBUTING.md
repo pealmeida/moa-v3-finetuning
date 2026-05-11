@@ -1,4 +1,4 @@
-# Contributing to MoA v3 Finetuning
+# Contributing to GateSwarm MoA Router
 
 Thank you for your interest in contributing! This project aims to make AI model routing more efficient through data-driven heuristic optimization.
 

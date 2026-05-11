@@ -1,4 +1,4 @@
-FROM ghcr.io/pealmeida/moa-v3-finetuning:latest
+FROM ghcr.io/pealmeida/gateswarm-moa-router:latest
 
 WORKDIR /workspace
 

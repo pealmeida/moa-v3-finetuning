@@ -1,4 +1,4 @@
-# MoA v3.3 — Empirical Labeling Pipeline
+# GateSwarm MoA Router v0.3.5 — Empirical Labeling Pipeline
 ## Trial-and-Error Architecture with RunPod Serverless
 
 **Date:** 2026-05-08  
@@ -213,7 +213,7 @@ Instead of synthetic formula labels, we measure the **minimum model capability n
 
 ```python
 """
-MoA v3.3 — Empirical Labeling Orchestrator
+GateSwarm MoA Router v0.3.5 — Empirical Labeling Orchestrator
 RunPod Serverless with asyncio batch processing
 """
 import asyncio
@@ -442,7 +442,7 @@ async def process_batch(batch: list[dict], caller: ModelCaller, oracle: OracleEv
 # ── Main Orchestrator ──────────────────────────────────────────────
 
 async def main():
-    print("=== MoA v3.3 Empirical Labeling Orchestrator ===")
+    print("=== GateSwarm MoA Router v0.3.5 Empirical Labeling Orchestrator ===")
     start_time = time.time()
     cost_tracker = CostTracker()
     

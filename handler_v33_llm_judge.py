@@ -1,4 +1,4 @@
-"""MoA v3.3 — LLM-as-Judge Labeling Pipeline
+"""GateSwarm MoA Router v0.3.5 — LLM-as-Judge Labeling Pipeline
 
 Produces ground-truth complexity labels using LLM judges to replace
 the formula-based synthetic labels that cause systematic misclassification.
@@ -332,7 +332,7 @@ def main():
         except Exception as e:
             print(f"  Could not load API key: {e}")
     
-    print("=== MoA v3.3 LLM-as-Judge Labeling ===")
+    print("=== GateSwarm MoA Router v0.3.5 LLM-as-Judge Labeling ===")
     print(f"  API key available: {bool(api_key)}")
     
     # 1. Load datasets
@@ -465,7 +465,7 @@ def main():
     elapsed = round(time.time() - t0, 1)
     
     cascade_weights = {
-        "version": "v3.3-llm-judged",
+        "version": "v0.3.5-llm-judged",
         "trained": datetime.now(timezone.utc).isoformat() + "Z",
         "dataset": f"{len(judged_samples)} LLM-judged (Alpaca)",
         "method": "pairwise-cascade-on-llm-labels",
@@ -493,7 +493,7 @@ def main():
     print(f"  Elapsed: {elapsed}s")
     
     return {
-        "version": "v3.3-llm-judge",
+        "version": "v0.3.5-llm-judge",
         "status": "completed",
         "elapsed_seconds": elapsed,
         "judged_samples": len(judged_samples),

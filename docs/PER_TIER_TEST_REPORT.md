@@ -1,4 +1,4 @@
-# MoA v3.1 — Massive Per-Tier Accuracy Test Report
+# GateSwarm MoA Router v0.2 — Massive Per-Tier Accuracy Test Report
 
 **Date:** 2026-05-08  
 **Platform:** RunPod Serverless (RTX 4090)  

@@ -1,4 +1,4 @@
-"""MoA v3.3 — LLM-as-Judge Label Validation & Dataset Builder
+"""GateSwarm MoA Router v0.3.5 — LLM-as-Judge Label Validation & Dataset Builder
 
 Uses bailian/qwen3.6-plus to label prompts from Alpaca + OpenOrca datasets.
 Addresses Chief Scientist finding: formula labels have only 2.0/10 validity.
@@ -219,7 +219,7 @@ def load_samples_streaming(name, max_n, key_field):
 
 
 def main():
-    print(f"MoA v3.3 LLM-as-Judge Labeling — {datetime.now(timezone.utc).isoformat()}")
+    print(f"GateSwarm MoA Router v0.3.5 LLM-as-Judge Labeling — {datetime.now(timezone.utc).isoformat()}")
     
     # Load datasets (streaming, memory-efficient)
     alpaca = load_samples_streaming("alpaca", 50000, "instruction")
@@ -329,7 +329,7 @@ def main():
     
     # Save results
     result = {
-        "version": "v3.3-llm-label-validation",
+        "version": "v0.3.5-llm-label-validation",
         "status": "completed",
         "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "llm_model": "bailian/qwen3.6-plus",

@@ -1,5 +1,5 @@
 """
-MoA v3.3 — Minimal RunPod Serverless Handler (test)
+GateSwarm MoA Router v0.3.5 — Minimal RunPod Serverless Handler (test)
 Verifies the endpoint works before running the full pipeline.
 """
 import runpod

@@ -80,7 +80,7 @@ IMPERATIVE_STARTS = {
 
 
 def extract_features(text: str) -> dict:
-    """Extract v3.1 15-feature vector."""
+    """Extract 15-feature complexity vector."""
     words = re.findall(r'\w+', text.lower())
     sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
     wc = len(words)
@@ -519,9 +519,9 @@ def evaluate_cascade(cascade: TierCascade, test_data: list[dict]) -> dict:
     }
 
 
-# ── Baseline Evaluation (v3.0 weights) ──
+# ── Baseline Evaluation (default weights) ──
 def evaluate_baseline(test_data: list[dict]) -> dict:
-    """Evaluate using v3.0 default weights + score-to-tier mapping."""
+    """Evaluate using default weights + score-to-tier mapping."""
     total = len(test_data)
     correct = 0
     tier_correct = Counter()
@@ -619,8 +619,8 @@ def handler(event):
     test_tier_dist = Counter(s.get("label", "moderate") for s in test_data)
     print(f"  Test tier distribution: {dict(test_tier_dist)}")
 
-    # ── Baseline Evaluation (v3.0 weights) ──
-    print(f"\n  Evaluating baseline (v3.0 weights)...")
+    # ── Baseline Evaluation (default weights) ──
+    print(f"\n  Evaluating baseline (default weights)...")
     baseline_result = evaluate_baseline(test_data)
     print(f"  Baseline accuracy: {baseline_result['accuracy']:.1%}")
     for tier in TIERS:

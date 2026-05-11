@@ -7,8 +7,12 @@ All notable changes to the GateSwarm MoA Router project.
 ### Changed
 - **Rebranded** from `moa-v3-finetuning` to `gateswarm-moa-router`
 - Version scheme updated: v1.x → v0.1.x, v2.x → v0.2.x, v3.x → v0.3.x
-- All Docker image references → `ghcr.io/pealmeida/gateswarm-moa-router`
-- Handler version strings updated to v0.3.5
+- **Standalone router** — `router.py` works without RunPod SDK or any cloud dependency
+- **Cleaned codebase** — removed 30 unused files (stale handlers, RunPod wrappers, internal reports)
+- Renamed core files: `handler_v32_cascade.py` → `train.py`, `handler_v33_inference.py` → `router.py`
+- Added HTTP API server, CLI, and batch scoring to `router.py`
+- Simplified Dockerfiles (removed 4 RunPod-specific, kept 2 generic)
+- Updated `requirements.txt` — removed `runpod`, added `scikit-learn`
 
 ---
 

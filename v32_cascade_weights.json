@@ -1,13 +1,24 @@
 {
-  "version": "v3.2-cascade",
+  "version": "v0.3.2-cascade",
   "trained": "2026-05-08T01:02:00Z",
   "dataset": "75K (GPD+Alpaca+OpenOrca)",
   "overall_accuracy": 0.747,
   "feature_names": [
-    "sentence_count", "avg_word_length", "has_question", "question_technical",
-    "technical_design", "code", "architecture", "word_count",
-    "four_plus", "has_imperative", "technical_terms", "multi_step",
-    "requires_context", "domain_specificity", "ambiguity_score"
+    "sentence_count",
+    "avg_word_length",
+    "has_question",
+    "question_technical",
+    "technical_design",
+    "code",
+    "architecture",
+    "word_count",
+    "four_plus",
+    "has_imperative",
+    "technical_terms",
+    "multi_step",
+    "requires_context",
+    "domain_specificity",
+    "ambiguity_score"
   ],
   "classifiers": {
     "trivial": {
@@ -20,15 +31,15 @@
         "has_imperative": -3.77,
         "requires_context": -0.05,
         "architecture": -0.01,
-        "sentence_count": 1.80,
-        "avg_word_length": -2.10,
-        "question_technical": -0.50,
-        "technical_design": -0.30,
-        "code": -0.40,
-        "word_count": -0.20,
-        "four_plus": -1.50,
-        "technical_terms": -1.00,
-        "multi_step": -0.30
+        "sentence_count": 1.8,
+        "avg_word_length": -2.1,
+        "question_technical": -0.5,
+        "technical_design": -0.3,
+        "code": -0.4,
+        "word_count": -0.2,
+        "four_plus": -1.5,
+        "technical_terms": -1.0,
+        "multi_step": -0.3
       }
     },
     "light": {
@@ -38,18 +49,18 @@
         "ambiguity_score": 7.39,
         "domain_specificity": -7.11,
         "has_question": -5.84,
-        "has_imperative": 0.60,
+        "has_imperative": 0.6,
         "requires_context": 2.92,
-        "architecture": -3.00,
-        "sentence_count": 1.20,
-        "avg_word_length": -0.80,
-        "question_technical": -1.50,
-        "technical_design": -0.40,
-        "code": 1.10,
-        "word_count": 0.50,
-        "four_plus": 0.80,
-        "technical_terms": 0.30,
-        "multi_step": 0.60
+        "architecture": -3.0,
+        "sentence_count": 1.2,
+        "avg_word_length": -0.8,
+        "question_technical": -1.5,
+        "technical_design": -0.4,
+        "code": 1.1,
+        "word_count": 0.5,
+        "four_plus": 0.8,
+        "technical_terms": 0.3,
+        "multi_step": 0.6
       }
     },
     "moderate": {
@@ -59,18 +70,18 @@
         "domain_specificity": 1.61,
         "has_question": -1.33,
         "requires_context": -0.97,
-        "ambiguity_score": -0.90,
+        "ambiguity_score": -0.9,
         "has_imperative": -0.26,
         "architecture": -0.57,
-        "sentence_count": 0.40,
-        "avg_word_length": 0.30,
-        "question_technical": -0.50,
-        "technical_design": 0.20,
-        "code": 0.80,
-        "word_count": 0.60,
-        "four_plus": 0.50,
-        "technical_terms": 0.40,
-        "multi_step": 0.70
+        "sentence_count": 0.4,
+        "avg_word_length": 0.3,
+        "question_technical": -0.5,
+        "technical_design": 0.2,
+        "code": 0.8,
+        "word_count": 0.6,
+        "four_plus": 0.5,
+        "technical_terms": 0.4,
+        "multi_step": 0.7
       }
     },
     "heavy": {
@@ -81,22 +92,22 @@
         "architecture": -0.81,
         "multi_step": -0.81,
         "domain_specificity": -0.56,
-        "requires_context": -0.80,
+        "requires_context": -0.8,
         "has_imperative": -0.43,
         "has_question": -0.01,
-        "sentence_count": 0.30,
-        "avg_word_length": 0.20,
-        "question_technical": 0.10,
-        "technical_design": 0.40,
-        "code": 0.60,
-        "word_count": 0.70,
-        "four_plus": 0.50,
-        "technical_terms": 0.50
+        "sentence_count": 0.3,
+        "avg_word_length": 0.2,
+        "question_technical": 0.1,
+        "technical_design": 0.4,
+        "code": 0.6,
+        "word_count": 0.7,
+        "four_plus": 0.5,
+        "technical_terms": 0.5
       }
     },
     "intensive": {
       "accuracy": 0.763,
-      "intercept": -0.10,
+      "intercept": -0.1,
       "weights": {
         "ambiguity_score": -1.24,
         "has_question": -1.01,
@@ -104,29 +115,53 @@
         "domain_specificity": 0.58,
         "has_imperative": 0.33,
         "architecture": -0.27,
-        "sentence_count": 0.50,
-        "avg_word_length": 0.40,
-        "question_technical": -0.30,
-        "technical_design": 0.60,
-        "code": 0.50,
-        "word_count": 0.80,
-        "four_plus": 0.60,
-        "technical_terms": 0.70,
-        "multi_step": 0.90
+        "sentence_count": 0.5,
+        "avg_word_length": 0.4,
+        "question_technical": -0.3,
+        "technical_design": 0.6,
+        "code": 0.5,
+        "word_count": 0.8,
+        "four_plus": 0.6,
+        "technical_terms": 0.7,
+        "multi_step": 0.9
       }
     }
   },
-  "tier_boundaries": [0.08, 0.18, 0.32, 0.52, 0.72],
+  "tier_boundaries": [
+    0.08,
+    0.18,
+    0.32,
+    0.52,
+    0.72
+  ],
   "tier_accuracy": {
-    "trivial": {"accuracy": 1.000, "samples": 5000},
-    "light": {"accuracy": 0.931, "samples": 3373},
-    "moderate": {"accuracy": 0.424, "samples": 2007},
-    "heavy": {"accuracy": 0.387, "samples": 1823},
-    "intensive": {"accuracy": 0.193, "samples": 855},
-    "extreme": {"accuracy": 0.688, "samples": 1944}
+    "trivial": {
+      "accuracy": 1.0,
+      "samples": 5000
+    },
+    "light": {
+      "accuracy": 0.931,
+      "samples": 3373
+    },
+    "moderate": {
+      "accuracy": 0.424,
+      "samples": 2007
+    },
+    "heavy": {
+      "accuracy": 0.387,
+      "samples": 1823
+    },
+    "intensive": {
+      "accuracy": 0.193,
+      "samples": 855
+    },
+    "extreme": {
+      "accuracy": 0.688,
+      "samples": 1944
+    }
   },
   "label_validity_notes": {
-    "issue": "Labels generated by deterministic formula — no human ground truth",
+    "issue": "Labels generated by deterministic formula \u2014 no human ground truth",
     "severity": "HIGH per Chief Scientist evaluation",
     "mitigation": "Cascade provides per-tier confidence scores; trivial/light (55% of traffic) are production-ready at 93%+ accuracy",
     "next_steps": "Implement LLM-as-judge labeling pipeline (see docs/LABEL_VALIDITY_FIX.md)"

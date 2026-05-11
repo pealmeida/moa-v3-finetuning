@@ -3,7 +3,7 @@
 LLMFit v3.1 — Dataset Anonymizer & Generalizer
 
 Strips and generalizes sensitive/personal information from training datasets
-before uploading to RunPod Serverless for training.
+before training.
 
 Anonymization layers:
 1. PII Redaction: emails, phones, CPFs, IPs, names, addresses

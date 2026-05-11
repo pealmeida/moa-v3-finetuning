@@ -88,7 +88,7 @@ curl -X POST http://localhost:8080/score \
 | **moderate** | 0.18 – 0.32 | Code help, explanations | glm-4.7 ($0.10/M) |
 | **heavy** | 0.32 – 0.52 | API design, refactoring | glm-5.1 ($0.13/M) |
 | **intensive** | 0.52 – 0.72 | Architecture, deep analysis | qwen3.6-plus ($0.26/M) |
-| **extreme** | 0.72 – 1.00 | Strategic thinking, research | claude-opus-4.6 ($5.00/M) |
+| **extreme** | 0.72 – 1.00 | Strategic thinking, research | qwen3.6-plus ($0.26/M) |
 
 ### 15-Feature Complexity Vector
 
@@ -202,6 +202,110 @@ python -m llmfit.anonymizer --input datasets/raw.jsonl --output datasets/clean.j
 ```
 
 See `llmfit/` for the full dataset factory toolkit.
+
+---
+
+## Integrations
+
+### Use with OpenClaw
+
+Run as a sidecar service alongside your OpenClaw gateway:
+
+```bash
+# Terminal 1: Start the router API
+python router.py --serve --port 8080
+
+# In a custom skill, call the router before model selection:
+# curl -s -X POST http://localhost:8080/score \
+#   -H "Content-Type: application/json" \
+#   -d '{"prompt": "'"$PROMPT"'"}' | jq -r '.model'
+```
+
+Or import directly in a skill:
+
+```python
+import sys; sys.path.insert(0, "/path/to/gateswarm-moa-router")
+from router import score_prompt, set_tier_models
+
+result = score_prompt(user_prompt)
+# result["model"] → use this for model selection
+```
+
+### Use with Pi Agent
+
+```python
+# ~/.pi/agent/skills/router_skill.py
+from gateswarm.router import score_prompt
+
+def before_model_call(prompt: str, default_model: str) -> str:
+    result = score_prompt(prompt)
+    return result["model"] if result["confidence"] > 0.7 else default_model
+```
+
+### Use with Hermes Agent
+
+```python
+# Hermes skill for self-improvement model selection
+from router import score_prompt
+
+def select_model_for_task(task_description: str) -> str:
+    result = score_prompt(task_description)
+    return result["model"]
+```
+
+### Use with OpenCode / Codex
+
+```bash
+# Pre-route before calling your coding agent
+TIER=$(python /path/to/router.py "$PROMPT" --json | jq -r .tier)
+
+case $TIER in
+  trivial|light)   MODEL="opencode/minimax-m2.5-free" ;;
+  moderate|heavy)  MODEL="opencode/kimi-k2.5-free" ;;
+  intensive)       MODEL="zai/glm-5.1" ;;
+  extreme)         MODEL="claude-opus-4-6" ;;
+esac
+
+opencode --model "$MODEL" --prompt "$PROMPT"
+```
+
+### Use with LangChain / LiteLLM / any LLM Framework
+
+```python
+from router import score_prompt
+import litellm
+
+result = score_prompt(user_prompt)
+response = litellm.completion(model=result["model"], messages=[...])
+```
+
+---
+
+## Model Recommendations
+
+### Cloud API Models
+
+| Tier | Cost-Optimized | Balanced | Premium |
+|------|----------------|----------|---------|
+| **trivial** | `glm-4.5-air` (ZAI, FREE) | `gpt-4o-mini` (OpenAI) | `gemini-3-flash` (Google) |
+| **light** | `glm-4.7-flash` (ZAI, $0.02/M) | `gpt-4o-mini` (OpenAI) | `gemini-3-flash` (Google) |
+| **moderate** | `glm-4.7` (ZAI, $0.10/M) | `qwen3.5-9b` (OpenRouter) | `gpt-4o` (OpenAI) |
+| **heavy** | `glm-5.1` (ZAI, $0.13/M) | `qwen3.6-plus` (Bailian) | `claude-sonnet-4.6` (Anthropic) |
+| **intensive** | `qwen3.6-plus` (Bailian) | `claude-sonnet-4.6` (Anthropic) | `gpt-5.5` (OpenAI) |
+| **extreme** | `qwen3.6-plus` (Bailian) | `claude-opus-4.6` (Anthropic) | `gpt-5.5` (OpenAI) |
+
+### Local Models (Ollama / vLLM / llama.cpp)
+
+| Tier | Fast (4-bit) | Balanced (8-bit) | Best (FP16) |
+|------|-------------|------------------|------------|
+| **trivial** | `qwen3-0.6b` | `phi-4-mini` | `qwen3-1.7b` |
+| **light** | `qwen3-1.7b` | `gemma-3-4b` | `llama-4-scout-17b` |
+| **moderate** | `qwen3-4b` | `llama-4-scout-17b` | `qwen3-8b` |
+| **heavy** | `qwen3-8b` | `llama-4-maverick-17b` | `deepseek-r1-14b` |
+| **intensive** | `deepseek-r1-14b` | `qwen3-14b` | `qwen3-32b` |
+| **extreme** | `qwen3-32b` | `deepseek-r1-32b` | `qwen3-72b` |
+
+> **Tip:** Override defaults with `set_tier_models()` to match your provider and budget. See [Customization](#customization).
 
 ### Docker
 

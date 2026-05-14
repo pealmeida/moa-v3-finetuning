@@ -318,6 +318,33 @@ docker run -p 8080:8080 gateswarm-moa-router python router.py --serve --port 808
 
 ---
 
+## Documentation
+
+Start here and go deeper:
+
+### Getting Started
+| Document | What's Inside |
+|----------|---------------|
+| **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** | System overview, component diagram, data flow |
+| **[GATEWAY_QUICKSTART.md](docs/GATEWAY_QUICKSTART.md)** | Full gateway setup with agent connection guides |
+| **[ROUTING_STRATEGY.md](docs/ROUTING_STRATEGY.md)** | Model selection, fallback chains, confidence escalation |
+
+### Deep Dive
+| Document | What's Inside |
+|----------|---------------|
+| **[CONTEXT_COMPRESSION_GUIDE.md](docs/CONTEXT_COMPRESSION_GUIDE.md)** | TurboQuant compression (Q8→Q0), conversation sharing |
+| **[PERSISTENCE_GUIDE.md](docs/PERSISTENCE_GUIDE.md)** | RAG lifecycle, feedback store, data persistence |
+| **[TRAINING_MODE_GUIDE.md](docs/TRAINING_MODE_GUIDE.md)** | Semi-supervised learning, gold/silver/bronze labels |
+
+### Reference
+| Document | What's Inside |
+|----------|---------------|
+| **[PRD.md](docs/PRD.md)** | Product requirements and user stories |
+| **[REQUIREMENTS.md](docs/REQUIREMENTS.md)** | Technical specifications |
+| **[SAFETY.md](docs/SAFETY.md)** | Security guidelines, API key management |
+| **[INTEGRATION.md](docs/INTEGRATION.md)** | How to connect agents and frameworks |
+| **[docs/research/](docs/research/)** | Training reports, cascade analysis, routing strategy |
+
 ## Project Structure
 
 ```
@@ -336,8 +363,7 @@ gateswarm-moa-router/
 │   ├── anonymizer.py            # 35-rule PII/secret redaction
 │   ├── self_eval.py             # Self-evaluation + SQLite feedback buffer
 │   └── datasets/
-│       ├── gpd_generator.py     # 50K synthetic prompt generator
-│       └── general-purpose/     # GPD dataset stats
+│       └── gpd_generator.py     # 50K synthetic prompt generator
 │
 ├── ─── Gateway (TypeScript) ───
 ├── gateway/
@@ -353,18 +379,33 @@ gateswarm-moa-router/
 │   │   ├── self-eval.ts         # LLM judge + accuracy tracking
 │   │   ├── retraining.ts        # Auto-retrain + hot-swap weights
 │   │   ├── gateswarm-cli.ts     # 11 CLI commands
-│   │   ├── adapters/            # Local/Cloud/CLI model adapters
-│   │   └── ...                  # (router, cache, metrics, types)
+│   │   ├── intent-engine*.ts    # Intent scoring
+│   │   ├── vote-persistence.ts  # Training vote tracking
+│   │   ├── benchmark-logger.ts  # Cost savings tracking
+│   │   └── types.ts             # Shared type definitions
 │   ├── public/                  # Dashboard, ONNX models, tokenizer
 │   ├── scripts/                 # cascade-retrain, start gateway
-│   ├── tests/                   # Unit + integration tests
+│   ├── tests/                   # Unit + integration tests (8 files)
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── v04_config.json          # Tier models + ensemble config
 │
-├── docs/                        # Architecture, strategy, reports
+├── docs/
+│   ├── ARCHITECTURE.md           # System architecture
+│   ├── GATEWAY_QUICKSTART.md     # Gateway setup guide
+│   ├── ROUTING_STRATEGY.md       # Model routing decisions
+│   ├── CONTEXT_COMPRESSION_GUIDE.md
+│   ├── PERSISTENCE_GUIDE.md
+│   ├── TRAINING_MODE_GUIDE.md
+│   ├── PRD.md
+│   ├── REQUIREMENTS.md
+│   ├── SAFETY.md                 # Security guidelines
+│   ├── INTEGRATION.md            # How to connect agents
+│   └── research/                 # Technical reports
+│       ├── V3_2_CASCADE_REPORT.md
+│       └── V3_3_MODEL_ROUTING_STRATEGY.md
+│
 ├── CHANGELOG.md
-├── COMPARISON.md                 # Version evolution analysis
 ├── CONTRIBUTING.md
 ├── SECURITY.md
 └── LICENSE                       # MIT

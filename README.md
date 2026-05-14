@@ -2,6 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![Stable](https://img.shields.io/badge/stable-v0.3.5-green)](https://github.com/pealmeida/gateswarm-moa-router/releases/tag/v0.3.5)
+[![Beta](https://img.shields.io/badge/beta-v0.4.4--context--aware-orange)](https://github.com/pealmeida/gateswarm-moa-router/releases/tag/v0.4.4-context-aware)
 
 **A self-optimizing complexity classifier for Mixture-of-Agents routing.**
 
@@ -368,18 +370,161 @@ Training cost: **~$0.01** per run. No GPU needed — runs on any CPU in under a 
 
 ---
 
-## Version History
+## Version Progression
 
-| Version | Date | What changed |
-|---------|------|-------------|
-| **v0.1.0** | 2026-05-05 | Static hand-tuned weights, 53% accuracy |
-| **v0.2.0** | 2026-05-06 | Manual tuning + bonuses, 67% accuracy |
-| **v0.3.0** | 2026-05-07 | MSE optimization (scipy), **87.2%** accuracy |
-| **v0.3.1** | 2026-05-08 | Multi-dataset + GPD 50K, **99.6%** on 2 tiers |
-| **v0.3.2** | 2026-05-08 | Binary cascade, **74.7%** on all 6 tiers |
-| **v0.3.5** | 2026-05-11 | Label correction, standalone router, LLMFit toolkit |
+GateSwarm evolved from a hand-tuned heuristic to a self-optimizing routing engine. Here's the journey:
 
-See [CHANGELOG.md](./CHANGELOG.md) for details and [COMPARISON.md](./COMPARISON.md) for the full evolution.
+### v0.1 — The First Heuristic (May 5, 2026)
+
+**What it was:** A static, hand-tuned 13-feature complexity scorer.
+
+| Aspect | Detail |
+|--------|--------|
+| Features | 13 hand-picked signals (word count, code, question, imperative, etc.) |
+| Weights | Manually assigned, no training data |
+| Architecture | Single linear score → 6-tier bucket |
+| Accuracy | 53% on 15 manual prompts |
+| Runtime | Python, zero dependencies |
+
+**Key limitation:** No training data. Weights were guesses — they worked on some prompts, failed on others. No way to know which.
+
+---
+
+### v0.2 — Manual Tuning & Bonuses (May 6, 2026)
+
+**What changed:** Added bonus multipliers for specific signal patterns.
+
+| Aspect | v0.1 → v0.2 |
+|--------|-------------|
+| New signals | `question_technical` (+0.12), `architecture` (+0.15–0.28), `technical_design` (+0.18) |
+| Length dampener | Skip dampening for architecture-heavy prompts |
+| Accuracy | 53% → 67% (15 prompts), but dropped to 40% on 30 prompts |
+| Problem | **Confirmed overfitting** — manual tuning worked on known prompts, failed on new ones |
+
+**Key lesson:** Manual tuning doesn't scale. We needed data-driven optimization.
+
+---
+
+### v0.3 — Data-Driven Training Pipeline (May 7–11, 2026)
+
+**What changed:** Full ML pipeline with scipy optimization, 75K training samples, and the binary cascade architecture.
+
+| Sub-version | Key innovation | Accuracy |
+|-------------|---------------|----------|
+| **v0.3.0** | scipy MSE optimization, 13→15 features, synthetic labels | 87.2% (Alpaca 10K) |
+| **v0.3.1** | Multi-dataset (Alpaca + GPD 50K synthetic + workspace) | 99.6% (GPD), 87.2% (Alpaca) |
+| **v0.3.2** | Binary cascade — 5 independent classifiers instead of one global model | **74.7%** (all 6 tiers, 75K) |
+| **v0.3.3** | LLM-as-Judge labeling, label correction, Chief Scientist evaluation | 99% heuristic validation |
+| **v0.3.4** | Label correction pipeline, production inference handler, Docker specialization | Production-ready |
+| **v0.3.5** | Rebrand to GateSwarm, standalone `router.py`, HTTP API, CLI, LLMFit toolkit | **Stable release** |
+
+**Key innovations in v0.3:**
+
+1. **Binary cascade classifier** — Instead of one model guessing 6 tiers, 5 binary classifiers each specialize in one boundary. Trivial: 100%, Light: 93%, but moderate/heavy struggle (39–42%).
+2. **75K training samples** — Alpaca (10K) + GPD synthetic (50K) + workspace data (15K)
+3. **LLM-as-Judge** — qwen3.6-plus validates labels empirically, breaking the circularity of formula-based labels
+4. **LLMFit dataset factory** — Extract → label → validate → anonymize your own training data
+5. **Chief Scientist evaluation** — Independent review found formula labels had 2.0/10 validity, prompting the pivot to empirical labeling
+
+**v0.3 per-tier accuracy:**
+
+| Tier | Accuracy | Status |
+|------|----------|--------|
+| Trivial | 100.0% | ✅ Solved |
+| Light | 93.1% | ✅ Good |
+| Moderate | 42.4% | ⚠️ Needs work |
+| Heavy | 38.7% | ⚠️ Needs work |
+| Intensive | 19.3% | ❌ Poor |
+| Extreme | 68.8% | ⚠️ Moderate |
+
+**What ships in the stable repo (v0.3.5):**
+- `router.py` — Standalone scorer (HTTP API + CLI + batch)
+- `train.py` — Full training pipeline
+- `llmfit/` — Dataset factory with anonymizer
+- `v32_cascade_weights.json` — Pre-trained weights
+
+---
+
+### v0.4 — Self-Optimizing Gateway (May 11–14, 2026)
+
+**What changed:** Rewrote as a TypeScript API gateway with ensemble scoring, persistent RAG, context continuity, and a self-improving feedback loop.
+
+| Aspect | v0.3 (Python classifier) | v0.4 (TypeScript gateway) |
+|--------|--------------------------|---------------------------|
+| **Language** | Python (standalone) | TypeScript (gateway server) |
+| **Scoring** | Cascade (5 binary classifiers) | **Ensemble** — heuristic 55% + RAG 25% + history 20% |
+| **Features** | 15 | **25** — added domain detection, entity count, code block size, expertise level |
+| **Context** | Stateless | **TurboQuant compression** — Q8/Q4/Q2/Q1/Q0 conversation summaries |
+| **Memory** | None | **Persistent RAG** — JSON-file backed, survives restarts |
+| **Learning** | Retrain manually | **Feedback loop** — auto-logs, LLM judge (10%), hot-swap weights |
+| **Routing** | Fixed model assignments | **Confidence-based** — escalate when uncertain, fallback chains |
+| **Continuity** | None | **Context anchor** — key decisions survive model switches |
+| **Training** | Formula labels | **Semi-supervised** — gold (LLM) + silver (RAG) + bronze (heuristic) labels |
+| **CLI** | Score prompts | **11 commands** — status, models, reasoning, retrain, feedback, rag, etc. |
+
+**v0.4 sub-versions:**
+
+| Version | Focus |
+|---------|-------|
+| **v0.4.0** | Ensemble voter, RAG index, feedback loop, 25 features, reasoning toggle, CLI |
+| **v0.4.3** | Timeout hardening (120s provider timeout, 30s SSE idle), auto-restart loop |
+| **v0.4.4** | Context continuity, RAG/feedback persistence, training mode wired, LLM judge anti-circularity |
+
+**Architecture:**
+
+```
+Client (Pi, OpenClaw, Hermes)
+    │
+    ▼
+┌─────────────────────────────────────────┐
+│           GateSwarm v0.4.4              │
+│                                         │
+│  1. Score complexity (ensemble vote)    │
+│  2. Route to optimal tier/model         │
+│  3. Compress long conversations         │
+│  4. Retrieve RAG context                │
+│  5. Inject continuity across switches   │
+│  6. Sanitize → Forward → Fallback       │
+│  7. Self-eval + feedback + training     │
+└─────────────┬───────────────────────────┘
+              │
+    ┌─────────┴──────────┐
+    ▼                    ▼
+Bailian (Qwen)     Z.AI (GLM)
+qwen3.6-plus       glm-4.5-air
+qwen3.5-plus       glm-4.7-flash
+MiniMax-M2.5       glm-4.7
+kimi-k2.5
+```
+
+**Status:** Beta. Active development. Not yet cleaned for public release.
+
+---
+
+### Summary: What Changed Between Generations
+
+| Generation | Core Idea | Strength | Weakness |
+|------------|-----------|----------|----------|
+| **v0.1** | Hand-tuned heuristic | Zero dependencies | Guesswork, 53% |
+| **v0.2** | Bonus multipliers | Better on edge cases | Overfitting confirmed |
+| **v0.3** | Data-driven training + cascade | 74.7% on 75K, no GPU | Moderate/heavy tiers weak (39–42%) |
+| **v0.4** | Ensemble + RAG + feedback loop | Self-optimizing, context-aware | Beta, requires gateway infra |
+
+---
+
+## Version Channels
+
+| Channel | Version | Status | Use for |
+|---------|---------|--------|--------|
+| **Stable** | v0.3.5 | ✅ Production-ready | Library usage, CLI, training pipeline |
+| **Beta** | v0.4.4 | 🧪 Testing | Full gateway, RAG, ensemble scoring, self-optimization |
+
+- **v0.3.5 (stable)** — Python-based classifier. Standalone `router.py` with HTTP API, batch scoring, and training pipeline. No cloud dependencies.
+- **v0.4.4 (beta)** — TypeScript gateway with ensemble scoring, persistent RAG, context continuity, and semi-supervised learning. Requires Node.js and LLM provider keys.
+
+## Safety
+
+Read [docs/SAFETY.md](docs/SAFETY.md) before deploying in production. GateSwarm is a routing tool — it does not filter or moderate content.
 
 ---
 

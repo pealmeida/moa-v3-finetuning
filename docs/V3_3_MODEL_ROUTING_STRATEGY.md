@@ -134,7 +134,7 @@ The above assumes 13% extreme traffic. In reality, **most gateways see 70%+ triv
 | **Even (33/22/45)** | 33% | 23% | 44% | $35,658 |
 | **Developer-heavy (40/30/30)** | 40% | 30% | 30% | $18,900 |
 
-**For Pedro's use case** (enterprise/fintech + personal agent), the realistic distribution is closer to **60/25/15**:
+**For enterprise use cases**, the realistic distribution is closer to **60/25/15**:
 
 | Tier | % | Msgs/day (10K) | Monthly Cost |
 |------|---|----------------|-------------|
@@ -342,7 +342,7 @@ PROVIDER_ORDER = {
 
 ## 6. Cost Savings by Traffic Volume
 
-### 10,000 messages/day (Pedro's typical usage)
+### 10,000 messages/day (typical enterprise usage)
 
 | Strategy | Monthly Cost | vs Always-Opus |
 |----------|-------------|----------------|

@@ -1,0 +1,104 @@
+{
+  "name": "moa-gateway-router",
+  "version": "1.0.0-mvp",
+  "description": "Mixture of Agents Gateway Router with intent-based complexity scoring, adaptive model routing, and benchmark cost tracking",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./intent-engine": {
+      "import": "./src/intent-engine.ts",
+      "types": "./src/intent-engine.ts"
+    },
+    "./router": {
+      "import": "./src/router.ts",
+      "types": "./src/router.ts"
+    },
+    "./routing-matrix": {
+      "import": "./src/routing-matrix.ts",
+      "types": "./src/routing-matrix.ts"
+    },
+    "./webgpu-loader": {
+      "import": "./src/webgpu-loader.ts",
+      "types": "./src/webgpu-loader.ts"
+    },
+    "./adapters": {
+      "import": "./src/adapters/index.ts",
+      "types": "./src/adapters/index.ts"
+    },
+    "./learning": {
+      "import": "./src/learning/learning-loop.ts",
+      "types": "./src/learning/learning-loop.ts"
+    }
+  },
+  "files": [
+    "src/",
+    "public/",
+    "data/",
+    "docs/",
+    "src-tauri/"
+  ],
+  "bin": {
+    "moa": "./src/bin.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "vitest run --config vitest.live.config.ts tests/live-ollama.test.ts --testTimeout=120000",
+    "test:all": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "start": "npx tsx src/bin.ts",
+    "chat": "npx tsx src/bin.ts --interactive",
+    "models": "npx tsx src/bin.ts --models",
+    "pipeline": "npx tsx src/bin.ts --test",
+    "dashboard": "npx tsx src/metrics-server.ts",
+    "dashboard:port": "npx tsx src/metrics-server.ts --port",
+    "tauri:dev": "npm run dashboard & cargo tauri dev",
+    "tauri:build": "cargo tauri build",
+    "benchmark": "npx tsx src/benchmark-logger.ts",
+    "benchmark:report": "npx tsx src/benchmark-report.ts"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.4.0",
+    "onnxruntime-web": "^1.21.0",
+    "idb-keyval": "^6.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.3.0",
+    "vitest": "^3.1.0",
+    "@types/node": "^22.0.0"
+  },
+  "keywords": [
+    "mixture-of-agents",
+    "browser-ai",
+    "webgpu",
+    "onnx",
+    "intent-engine",
+    "model-routing",
+    "transformers-js",
+    "adaptive-inference",
+    "edge-ai",
+    "self-improving"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "homepage": "",
+  "bugs": {
+    "url": ""
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

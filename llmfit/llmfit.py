@@ -641,7 +641,7 @@ def main():
 
     # generate
     gen_parser = subparsers.add_parser("generate", help="Generate dataset from workspace")
-    gen_parser.add_argument("--path", default="/root/.openclaw/workspace", help="Workspace path")
+    gen_parser.add_argument("--path", default=".", help="Workspace path")
     gen_parser.add_argument("--output", required=True, help="Output JSONL path")
     gen_parser.add_argument("--exclude", default="node_modules,.git,coverage,__pycache__", help="Comma-separated exclude patterns")
     gen_parser.add_argument("--max-size", type=int, default=512, help="Max file size in KB")

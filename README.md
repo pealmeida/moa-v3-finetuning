@@ -2,24 +2,46 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
-[![Stable](https://img.shields.io/badge/stable-v0.3.5-green)](https://github.com/pealmeida/gateswarm-moa-router/releases/tag/v0.3.5)
-[![Beta](https://img.shields.io/badge/beta-v0.4.4--context--aware-orange)](https://github.com/pealmeida/gateswarm-moa-router/releases/tag/v0.4.4-context-aware)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-**A self-optimizing complexity classifier for Mixture-of-Agents routing.**
+**A self-optimizing complexity classifier and API gateway for Mixture-of-Agents routing.**
 
-Classifies prompt complexity into 6 tiers (trivial → extreme) using a pre-trained binary cascade, then recommends the cheapest model that can handle it. **74.7% accuracy** across all 6 tiers on 75K prompts. Zero GPU required.
+Two components in one repo:
+
+| Component | What it is | Language |
+|-----------|------------|----------|
+| **`router.py`** | Scoring engine — classifies prompts into 6 tiers, recommends cheapest model | Python |
+| **`gateway/`** | HTTP proxy — OpenAI-compatible server that intercepts, scores, routes, forwards, retries | TypeScript |
+
+**74.7% accuracy** across 6 tiers on 75K prompts. Zero GPU required for the classifier.
 
 ---
 
 ## Quick Start
 
-### Install
+### Scoring Engine (Python)
 
 ```bash
 pip install numpy
 ```
 
 That's it. No GPU, no heavy ML frameworks. The pre-trained weights ship with the repo.
+
+### Gateway (TypeScript)
+
+```bash
+cd gateway
+cp .env.example .env   # Edit with your API keys
+npm install
+npx tsx src/moa-gateway.ts --port 8900
+```
+
+Then connect any agent:
+```bash
+curl http://localhost:8900/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gateswarm","messages":[{"role":"user","content":"Hello"}]}'
+```
 
 ### Use as a Library
 
@@ -209,9 +231,9 @@ See `llmfit/` for the full dataset factory toolkit.
 
 ## Integrations
 
-### Use with OpenClaw
+### Use as a Sidecar Service
 
-Run as a sidecar service alongside your OpenClaw gateway:
+Run as a sidecar service alongside any LLM agent:
 
 ```bash
 # Terminal 1: Start the router API
@@ -244,10 +266,10 @@ def before_model_call(prompt: str, default_model: str) -> str:
     return result["model"] if result["confidence"] > 0.7 else default_model
 ```
 
-### Use with Hermes Agent
+### Self-Improvement Integration
 
 ```python
-# Hermes skill for self-improvement model selection
+# Integrate the feedback loop for continuous improvement
 from router import score_prompt
 
 def select_model_for_task(task_description: str) -> str:
@@ -328,6 +350,8 @@ docker run -p 8080:8080 gateswarm-moa-router python router.py --serve --port 808
 
 ```
 gateswarm-moa-router/
+│
+├── ─── Scoring Engine (Python) ───
 ├── router.py                    # Production scorer (standalone, ~450 LOC)
 ├── train.py                     # Training pipeline (cascade + optimization)
 ├── v32_cascade_weights.json     # Pre-trained weights (5 classifiers)
@@ -339,22 +363,40 @@ gateswarm-moa-router/
 │   ├── llmfit.py                # Core: extract → label → validate → optimize
 │   ├── anonymizer.py            # 35-rule PII/secret redaction
 │   ├── self_eval.py             # Self-evaluation + SQLite feedback buffer
-│   ├── datasets/
-│   │   ├── gpd_generator.py     # 50K synthetic prompt generator
-│   │   ├── general-purpose/     # GPD dataset stats
-│   │   └── workspace_weights.json
+│   └── datasets/
+│       ├── gpd_generator.py     # 50K synthetic prompt generator
+│       └── general-purpose/     # GPD dataset stats
 │
-├── docs/
-│   ├── V3_2_CASCADE_REPORT.md   # Cascade architecture & results
-│   └── V3_3_MODEL_ROUTING_STRATEGY.md  # Model routing strategy
+├── ─── Gateway (TypeScript) ───
+├── gateway/
+│   ├── src/
+│   │   ├── moa-gateway.ts       # HTTP proxy server (OpenAI-compatible)
+│   │   ├── feature-extractor-v04.ts  # 25-feature prompt analysis
+│   │   ├── ensemble-voter.ts    # Heuristic + RAG + history voting
+│   │   ├── rag-index.ts         # Persistent RAG context retrieval
+│   │   ├── feedback-store.ts    # Self-optimizing feedback loop
+│   │   ├── agent-registry.ts    # Multi-agent config management
+│   │   ├── turboquant-compressor.ts  # Conversation compression
+│   │   ├── training-mode.ts     # Semi-supervised learning pipeline
+│   │   ├── self-eval.ts         # LLM judge + accuracy tracking
+│   │   ├── retraining.ts        # Auto-retrain + hot-swap weights
+│   │   ├── gateswarm-cli.ts     # 11 CLI commands
+│   │   ├── adapters/            # Local/Cloud/CLI model adapters
+│   │   └── ...                  # (router, cache, metrics, types)
+│   ├── public/                  # Dashboard, ONNX models, tokenizer
+│   ├── scripts/                 # cascade-retrain, start gateway
+│   ├── tests/                   # Unit + integration tests
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── v04_config.json          # Tier models + ensemble config
 │
+├── docs/                        # Architecture, strategy, reports
 ├── CHANGELOG.md
 ├── COMPARISON.md                 # Version evolution analysis
 ├── CONTRIBUTING.md
+├── SECURITY.md
 └── LICENSE                       # MIT
 ```
-
----
 
 ## Cost Savings
 
@@ -473,7 +515,7 @@ GateSwarm evolved from a hand-tuned heuristic to a self-optimizing routing engin
 **Architecture:**
 
 ```
-Client (Pi, OpenClaw, Hermes)
+Client (any LLM agent)
     │
     ▼
 ┌─────────────────────────────────────────┐
@@ -497,8 +539,6 @@ MiniMax-M2.5       glm-4.7
 kimi-k2.5
 ```
 
-**Status:** Beta. Active development. Not yet cleaned for public release.
-
 ---
 
 ### Summary: What Changed Between Generations
@@ -508,19 +548,18 @@ kimi-k2.5
 | **v0.1** | Hand-tuned heuristic | Zero dependencies | Guesswork, 53% |
 | **v0.2** | Bonus multipliers | Better on edge cases | Overfitting confirmed |
 | **v0.3** | Data-driven training + cascade | 74.7% on 75K, no GPU | Moderate/heavy tiers weak (39–42%) |
-| **v0.4** | Ensemble + RAG + feedback loop | Self-optimizing, context-aware | Beta, requires gateway infra |
+| **v0.4** | Ensemble + RAG + feedback loop | Self-optimizing, context-aware | Requires gateway infra |
 
 ---
 
 ## Version Channels
 
-| Channel | Version | Status | Use for |
-|---------|---------|--------|--------|
-| **Stable** | v0.3.5 | ✅ Production-ready | Library usage, CLI, training pipeline |
-| **Beta** | v0.4.4 | 🧪 Testing | Full gateway, RAG, ensemble scoring, self-optimization |
+Both components live in this single repo:
 
-- **v0.3.5 (stable)** — Python-based classifier. Standalone `router.py` with HTTP API, batch scoring, and training pipeline. No cloud dependencies.
-- **v0.4.4 (beta)** — TypeScript gateway with ensemble scoring, persistent RAG, context continuity, and semi-supervised learning. Requires Node.js and LLM provider keys.
+| Component | Version | Status | Use for |
+|-----------|---------|--------|--------|
+| **Scoring Engine** (`router.py`) | v0.3.5 | ✅ Stable | Library usage, CLI, training pipeline |
+| **Gateway** (`gateway/`) | v0.4.4 | 🧪 Beta | Full HTTP proxy, RAG, ensemble scoring |
 
 ## Safety
 

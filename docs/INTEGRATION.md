@@ -45,7 +45,7 @@ your_llm_client --model "$MODEL" --prompt "$PROMPT"
 
 ## Platform-Specific Integrations
 
-### OpenClaw
+### Any LLM Agent
 
 GateSwarm works as a scoring sidecar or embedded skill:
 
@@ -60,7 +60,7 @@ python router.py --serve --port 8080
 import sys; sys.path.insert(0, "/path/to/gateswarm-moa-router")
 from router import score_prompt, set_tier_models
 
-# Override models for your OpenClaw providers
+# Override models for your providers
 set_tier_models({
     "trivial":   {"model": "glm-4.5-air",   "provider": "zai",     "max_tokens": 256},
     "light":     {"model": "glm-4.7-flash",  "provider": "zai",     "max_tokens": 512},
@@ -87,12 +87,12 @@ def before_model_call(prompt: str, default_model: str) -> str:
     return default_model  # Fall back to Pi's default
 ```
 
-### Hermes Agent
+### Self-Improving Agent
 
 Use for model selection in self-improvement and skill creation loops:
 
 ```python
-# Hermes skill: ~/.hermes/skills/gateswarm_bridge.py
+feedback integration/feedback integration
 import sys
 sys.path.insert(0, "/path/to/gateswarm-moa-router")
 from router import score_prompt

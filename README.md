@@ -410,6 +410,40 @@ With proper tier routing, you send each prompt to the cheapest capable model:
 
 Training cost: **~$0.01** per run. No GPU needed — runs on any CPU in under a minute.
 
+## Research Foundations
+
+This router implements patterns validated by the following papers:
+
+### RouteMoA: Dynamic Routing without Pre-Inference (Wang et al., 2026)
+
+The most directly related work. RouteMoA proves that lightweight pre-inference scoring is the key to efficient MoA:
+
+- **Lightweight scorer:** An SLM (mDeBERTaV3-base) predicts coarse-grained performance per model from the query alone — no inference needed. Our regressor follows this exact pattern but targets continuous complexity scoring.
+- **No pre-inference:** The scorer narrows candidates before any LLM runs. This eliminates the #1 cost driver in MoA systems.
+- **89.8% cost reduction, 63.6% latency reduction** validated on large-scale pools (10+ models).
+- **Mixture of judges:** Post-hoc self/cross-assessment refines scores using actual outputs (posterior correction at no extra cost). This is a future extension for our router.
+- **Model ranking:** Balances performance, cost, and latency — exactly our tier→model mapping.
+
+### MoMA: Mixture of Models and Agents (Guo et al., 2025)
+
+Generalized model-agent routing framework:
+
+- **Pareto-optimal routing:** Don't just pick the cheapest — pick the cheapest that meets a quality threshold.
+- **Capability profiling:** 2.25M-instance training corpus proves small models outperform large ones on their sweet-spot tasks.
+- **Unified routing:** First framework to route across both LLMs and agents, enabling full MoA orchestration.
+
+### Mixture of Agents (Wang et al., 2024)
+
+Original MoA architecture — multi-round parallel reasoning among medium models surpasses GPT-4 Omni. Our router makes MoA practical by eliminating unnecessary model invocations.
+
+### RouteLLM (Ong et al., 2024)
+
+Binary routing between strong/weak models. We generalize to 6 tiers instead of 2, enabling finer-grained cost optimization. Their preference-data training approach also informs our complexity labeling.
+
+### RouterDC (Chen et al., 2024)
+
+Dual contrastive learning for routing accuracy. RouteMoA adopts this approach (sample-LLM + sample-sample contrastive loss). Future versions of our regressor may incorporate contrastive training.
+
 ---
 
 ## Version Progression

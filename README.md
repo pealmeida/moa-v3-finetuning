@@ -4,9 +4,9 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-**Every prompt gets the right model. Not the most expensive one.**
+**Self-optimizing complexity classifier for Mixture-of-Agents routing.**
 
-GateSwarm is a smart router for LLM traffic. It looks at each prompt, measures its complexity, and routes it to the cheapest model that can handle it. Simple prompts go to free models. Hard ones go to powerful ones. No wasted tokens, no degraded quality.
+6-tier prompt scoring → cheapest capable model. Zero GPU, 74.7% accuracy.
 
 ### Why use it
 

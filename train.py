@@ -12,7 +12,9 @@ Each classifier:
 
 Expected: Better per-tier accuracy by avoiding class imbalance.
 """
-import os, sys, json, time, re, math, subprocess, random
+from __future__ import annotations
+
+import argparse, os, sys, json, time, re, math, subprocess, random
 from datetime import datetime, timezone
 from typing import Optional
 from collections import Counter
@@ -24,13 +26,31 @@ def ensure_deps():
         except ImportError: missing.append(pkg)
     if missing:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet"] + missing)
-ensure_deps()
 
-import numpy as np
-from scipy.optimize import minimize
-from datasets import load_dataset
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+np = None
+minimize = None
+load_dataset = None
+LogisticRegression = None
+accuracy_score = None
+
+
+def load_training_deps():
+    """Import training-only dependencies lazily after CLI parsing."""
+    global np, minimize, load_dataset, LogisticRegression, accuracy_score
+    if all(dep is not None for dep in (np, minimize, load_dataset, LogisticRegression, accuracy_score)):
+        return
+
+    import numpy as np_module
+    from scipy.optimize import minimize as minimize_fn
+    from datasets import load_dataset as load_dataset_fn
+    from sklearn.linear_model import LogisticRegression as logistic_regression_cls
+    from sklearn.metrics import accuracy_score as accuracy_score_fn
+
+    np = np_module
+    minimize = minimize_fn
+    load_dataset = load_dataset_fn
+    LogisticRegression = logistic_regression_cls
+    accuracy_score = accuracy_score_fn
 
 # ── Constants ──
 FEATURE_NAMES = [
@@ -272,6 +292,34 @@ def load_hf(name: str, max_per: int) -> list[dict]:
     except Exception as e:
         print(f"  Failed {name}: {e}")
         return []
+
+
+def load_jsonl_dataset(path: str) -> list[dict]:
+    """Load a custom JSONL dataset with text/label records."""
+    prompts = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line_no, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError as e:
+                print(f"  Skipping malformed JSONL line {line_no} in {path}: {e}")
+                continue
+
+            text = record.get("text") or record.get("prompt") or record.get("instruction")
+            if not isinstance(text, str) or not text.strip():
+                continue
+
+            text = text.strip()
+            prompts.append({
+                "text": text,
+                "features": record.get("features") or extract_features(text),
+                "label": record.get("label") or label_from_explicit_signals(text),
+                "source": record.get("source", "custom-jsonl"),
+            })
+    return prompts
 
 
 # ── Binary Classifier Optimizer ──
@@ -556,6 +604,7 @@ def evaluate_baseline(test_data: list[dict]) -> dict:
 
 # ── Main Handler ──
 def handler(event):
+    load_training_deps()
     inp = event.get("input", {})
     print(f"GateSwarm MoA Router v0.3 Tier-Pair Cascade — {datetime.now(timezone.utc).isoformat()}")
 
@@ -563,6 +612,7 @@ def handler(event):
     max_per = inp.get("max_per", 20000)
     gpd_trivial = inp.get("gpd_trivial", 25000)
     gpd_light = inp.get("gpd_light", 10000)
+    dataset_path = inp.get("dataset")
 
     all_samples = []
 
@@ -586,6 +636,13 @@ def handler(event):
         orca = load_hf("openorca", max_per)
         all_samples.extend(orca)
         print(f"  ✅ {len(orca)} OpenOrca samples")
+
+    # 4. Load custom JSONL dataset
+    if dataset_path:
+        print(f"  Loading custom dataset: {dataset_path}...")
+        custom = load_jsonl_dataset(dataset_path)
+        all_samples.extend(custom)
+        print(f"  ✅ {len(custom)} custom samples")
 
     if not all_samples:
         return {"error": "No prompts loaded", "status": "failed"}
@@ -713,13 +770,36 @@ def handler(event):
     return result
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train the GateSwarm tier-pair cascade")
+    parser.add_argument("--datasets", default="gpd,alpaca", help="Comma-separated built-in datasets to load")
+    parser.add_argument("--max-per", type=int, default=10000, help="Maximum samples per built-in dataset")
+    parser.add_argument("--gpd-trivial", type=int, default=25000, help="Number of synthetic trivial GPD samples")
+    parser.add_argument("--gpd-light", type=int, default=10000, help="Number of synthetic light GPD samples")
+    parser.add_argument("--output", help="Optional path to write the full training result JSON")
+    parser.add_argument("--dataset", help="Optional custom JSONL dataset path")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = parse_args()
+    ensure_deps()
+    load_training_deps()
+
     result = handler({
         "input": {
-            "datasets": ["gpd", "alpaca"],
-            "max_per": 10000,
-            "gpd_trivial": 25000,
-            "gpd_light": 10000,
+            "datasets": [d.strip() for d in args.datasets.split(",") if d.strip()],
+            "max_per": args.max_per,
+            "gpd_trivial": args.gpd_trivial,
+            "gpd_light": args.gpd_light,
+            "dataset": args.dataset,
         }
     })
-    print(json.dumps(result, indent=2))
+
+    rendered = json.dumps(result, indent=2)
+    print(rendered)
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(rendered)
+            f.write("\n")

@@ -185,16 +185,16 @@ LLMFit is the built-in dataset factory that creates training data from your own 
 
 ```bash
 # Extract prompts from your codebase / chat logs
-python -m llmfit generate --source workspace --output datasets/raw.jsonl
+python -m llmfit generate --path . --output datasets/raw.jsonl
 
 # Label with rule-based complexity estimation
-python -m llmfit label --input datasets/raw.jsonl --mode rule
+python -m llmfit label --input datasets/raw.jsonl --output datasets/labeled.jsonl --mode rule
 
 # Validate dataset quality
 python -m llmfit validate --input datasets/labeled.jsonl
 
 # Anonymize PII/secrets before sharing
-python -m llmfit.anonymizer --input datasets/raw.jsonl --output datasets/clean.jsonl
+python -m llmfit.anonymizer anonymize --input datasets/raw.jsonl --output datasets/clean.jsonl
 ```
 
 See `llmfit/` for the full dataset factory toolkit.

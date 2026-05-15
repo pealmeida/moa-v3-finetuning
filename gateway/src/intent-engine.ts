@@ -161,7 +161,12 @@ export function v33Score(prompt: string): V33ScoreResult {
   };
 }
 
-import { scoreToEffort as _scoreToEffort } from './routing-matrix.js';
-
-// Re-export from routing-matrix (canonical implementation)
-export const scoreToEffort = _scoreToEffort;
+// Canonical tier-boundary mapping. Matches v04_config.json tier_boundaries.
+export function scoreToEffort(score: number): EffortLevel {
+  if (score < 0.1557) return 'trivial';
+  if (score < 0.1842) return 'light';
+  if (score < 0.2788) return 'moderate';
+  if (score < 0.3488) return 'heavy';
+  if (score < 0.4611) return 'intensive';
+  return 'extreme';
+}

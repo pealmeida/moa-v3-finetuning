@@ -308,5 +308,5 @@ export function ensembleVote(input: EnsembleInput): EnsembleVote {
   };
 }
 
-import { scoreToEffort as _scoreToEffort } from './routing-matrix.js';
+import { scoreToEffort as _scoreToEffort } from './intent-engine.js';
 export const scoreToEffort = _scoreToEffort;

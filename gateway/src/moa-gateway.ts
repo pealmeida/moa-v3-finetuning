@@ -46,8 +46,6 @@ import { selfEvaluate } from './self-eval.js';
 import { addRagEntry, initRagIndex, startRagAutoFlush } from './rag-index.js';
 import { retrainIfNeeded, getActiveWeights } from './retraining.js';
 import { getConfig, getTierModel, getAllTierModels, getReasoningStatus } from './v04-config.js';
-import { ModelRouter } from './router.js';
-import { lookupMatrix } from './routing-matrix.js';
 import type { EffortLevel } from './types.js';
 import { agentRegistry, AgentConfig } from './agent-registry.js';
 import { turboQuantCompress, MODEL_CONTEXT_WINDOWS } from './turboquant-compressor.js';
@@ -57,7 +55,7 @@ import {
   detectVoteReply, inferRagConsensus, shouldRetrain as shouldRetrainTraining,
   getTrainingStats,
 } from './training-mode.js';
-import { combineLabels, getCalibrationStats, calibrateBronze, calibrateSilver } from './label-combiner.js';
+import { getCalibrationStats, calibrateBronze, calibrateSilver } from './label-combiner.js';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -70,7 +68,6 @@ const PORT = parseInt(process.argv.find(a => a === '--port') ? process.argv[proc
 // ─── State ─────────────────────────────────────────────
 
 const benchmarkLogger = new BenchmarkLogger();
-let router: ModelRouter;
 
 // ─── Context Continuity (v0.4.4) ──────────────────────
 // Tracks per-session summaries across model switches so that
@@ -693,12 +690,6 @@ async function init() {
   startFeedbackAutoFlush();
   startRagAutoFlush();
   console.log('📦 Persistence: feedback + RAG stores initialized');
-
-  router = new ModelRouter({
-    backend: 'webgpu', memoryGB: 16, isMobile: false, cores: 12,
-    tier1Limit: 0.3, tier2Limit: 0.6,
-    recommendedModels: { worker: 'llama-3.2-3b-q4', gatekeeper: 'qwen-0.5b-q4' },
-  });
 
   const agents = agentRegistry.getAgents();
   console.log(`🚀 GateSwarm MoA Router v0.4.4 (TurboQuant v3.6) starting on :${PORT}`);

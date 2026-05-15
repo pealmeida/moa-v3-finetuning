@@ -23,7 +23,7 @@ import {
   recordTierAccuracy, getTierAccuracy, getOverallAccuracy,
   parseVoteReply, isVoteReply,
 } from './vote-persistence.js';
-import { combineLabels, getCalibrationStats, calibrateBronze, calibrateSilver, incrementInteractionCount } from './label-combiner.js';
+import { getCalibrationStats, incrementInteractionCount } from './label-combiner.js';
 
 // ─── Types ───────────────────────────────────────────────
 

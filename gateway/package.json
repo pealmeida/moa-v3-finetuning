@@ -1,70 +1,50 @@
 {
-  "name": "moa-gateway-router",
-  "version": "1.0.0-mvp",
-  "description": "Mixture of Agents Gateway Router with intent-based complexity scoring, adaptive model routing, and benchmark cost tracking",
+  "name": "gateswarm-gateway",
+  "version": "0.4.4",
+  "description": "GateSwarm MoA Gateway — OpenAI-compatible HTTP proxy that scores prompt complexity and routes to the cheapest capable model. CLI + terminal.",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "src/moa-gateway.ts",
+  "types": "src/moa-gateway.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts"
+      "import": "./src/moa-gateway.ts",
+      "types": "./src/moa-gateway.ts"
     },
     "./intent-engine": {
-      "import": "./src/intent-engine.ts",
-      "types": "./src/intent-engine.ts"
+      "import": "./src/intent-engine-v04.ts",
+      "types": "./src/intent-engine-v04.ts"
     },
-    "./router": {
-      "import": "./src/router.ts",
-      "types": "./src/router.ts"
+    "./ensemble-voter": {
+      "import": "./src/ensemble-voter.ts",
+      "types": "./src/ensemble-voter.ts"
     },
-    "./routing-matrix": {
-      "import": "./src/routing-matrix.ts",
-      "types": "./src/routing-matrix.ts"
+    "./feature-extractor": {
+      "import": "./src/feature-extractor-v04.ts",
+      "types": "./src/feature-extractor-v04.ts"
     },
-    "./webgpu-loader": {
-      "import": "./src/webgpu-loader.ts",
-      "types": "./src/webgpu-loader.ts"
-    },
-    "./adapters": {
-      "import": "./src/adapters/index.ts",
-      "types": "./src/adapters/index.ts"
-    },
-    "./learning": {
-      "import": "./src/learning/learning-loop.ts",
-      "types": "./src/learning/learning-loop.ts"
+    "./cli": {
+      "import": "./src/gateswarm-cli.ts",
+      "types": "./src/gateswarm-cli.ts"
     }
   },
   "files": [
     "src/",
     "public/",
-    "data/",
-    "docs/",
-    "src-tauri/"
+    "docs/"
   ],
   "bin": {
-    "moa": "./src/bin.ts"
+    "gateswarm": "./src/gateswarm-cli.ts",
+    "gateswarm-gateway": "./src/moa-gateway.ts"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
+    "start": "tsx src/moa-gateway.ts --port 8900",
+    "dev": "tsx watch src/moa-gateway.ts --port 8900",
+    "cli": "tsx src/gateswarm-cli.ts",
+    "benchmark": "tsx src/benchmark-logger.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:live": "vitest run --config vitest.live.config.ts tests/live-ollama.test.ts --testTimeout=120000",
-    "test:all": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit",
-    "start": "npx tsx src/bin.ts",
-    "chat": "npx tsx src/bin.ts --interactive",
-    "models": "npx tsx src/bin.ts --models",
-    "pipeline": "npx tsx src/bin.ts --test",
-    "dashboard": "npx tsx src/metrics-server.ts",
-    "dashboard:port": "npx tsx src/metrics-server.ts --port",
-    "tauri:dev": "npm run dashboard & cargo tauri dev",
-    "tauri:build": "cargo tauri build",
-    "benchmark": "npx tsx src/benchmark-logger.ts",
-    "benchmark:report": "npx tsx src/benchmark-report.ts"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.4.0",
@@ -73,30 +53,30 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "vite": "^6.3.0",
+    "tsx": "^4.19.0",
     "vitest": "^3.1.0",
     "@types/node": "^22.0.0"
   },
   "keywords": [
     "mixture-of-agents",
-    "browser-ai",
-    "webgpu",
-    "onnx",
-    "intent-engine",
+    "moa",
+    "llm-router",
     "model-routing",
-    "transformers-js",
-    "adaptive-inference",
-    "edge-ai",
-    "self-improving"
+    "intent-engine",
+    "complexity-scoring",
+    "openai-compatible",
+    "ai-gateway",
+    "cost-optimization",
+    "adaptive-inference"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/pealmeida/gateswarm-moa-router.git"
   },
-  "homepage": "",
+  "homepage": "https://github.com/pealmeida/gateswarm-moa-router#readme",
   "bugs": {
-    "url": ""
+    "url": "https://github.com/pealmeida/gateswarm-moa-router/issues"
   },
   "engines": {
     "node": ">=18.0.0"
